@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -14,13 +15,23 @@ Route::get('/hotlines', function () {
 
 
 // AUTHENTICATION ROUTES
-Route::get('/login', function () {
-    return Inertia::render('Auth/Login');
-})->name('login');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    
+    Route::get('/register', [AuthController::class, 'showRegistration'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
 
-Route::get('/register', function () {
-    return Inertia::render('Auth/Registration');
-})->name('register');
+// Protected Routes (Require Authentication)
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // Example protected dashboard route
+    Route::get('/dashboard', function () {
+        return Inertia::render('Resident/Home');
+    })->name('dashboard');
+});
 
 Route::prefix('resident')->group(function () {
     
