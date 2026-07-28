@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class ReportController extends Controller {
     
@@ -19,7 +21,7 @@ class ReportController extends Controller {
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('reports', 'public');
+            $attachmentPath = $request->file('attachment')->store('reports');
         }
 
         Report::create([
@@ -34,4 +36,16 @@ class ReportController extends Controller {
 
         return redirect()->back()->with('success', 'Emergency report submitted successfully. Responders have been notified.');
     }
+
+    public function showAttachment(Report $report) {
+    if (auth()->id() !== $report->user_id && auth()->user()->role() !== 'secretary') {
+        abort(403, 'Unauthorized to view this evidence.');
+    }
+
+    if (!Storage::disk('local')->exists($report->attachment_path)) {
+        abort(404, 'File not found.');
+    }
+
+    return Storage::disk('local')->response($report->attachment_path);
+}
 }

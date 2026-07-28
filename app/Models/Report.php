@@ -20,4 +20,13 @@ class Report extends Model {
     public function reporter() {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    protected $appends = ['attachment_url'];
+
+    public function getAttachmentUrlAttribute() {
+        if ($this->attachment_path) {
+            return route('reports.attachment', $this->id);
+        }
+        return null;
+    }
 }

@@ -3,11 +3,12 @@ import { useForm } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
 export default function EmergencyReport() {
+    // 1. Changed latitude and longitude initial states to null instead of ''
     const { data, setData, post, processing, errors, reset } = useForm({
         incident_type: '',
         description: '',
-        latitude: '',
-        longitude: '',
+        latitude: null, 
+        longitude: null,
         attachment: null,
     });
 
@@ -34,7 +35,13 @@ export default function EmergencyReport() {
     const submit = (e) => {
         e.preventDefault();
         post(route('reports.store'), {
-            onSuccess: () => reset(),
+            // 2. Force FormData ensures the file is sent correctly
+            forceFormData: true,
+            onSuccess: () => {
+                reset();
+                setLocationStatus('');
+                alert('Emergency report submitted successfully.'); // Quick feedback
+            },
         });
     };
 
@@ -57,7 +64,7 @@ export default function EmergencyReport() {
                         <option value="Accident">Traffic Accident</option>
                         <option value="Other">Other</option>
                     </select>
-                    {errors.incident_type && <div className="text-red-500 text-sm mt-1">{errors.incident_type}</div>}
+                    {errors.incident_type && <div className="text-red-500 text-sm mt-1 font-medium">{errors.incident_type}</div>}
                 </div>
 
                 <div>
@@ -69,7 +76,7 @@ export default function EmergencyReport() {
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
                         placeholder="Provide details about the incident..."
                     />
-                    {errors.description && <div className="text-red-500 text-sm mt-1">{errors.description}</div>}
+                    {errors.description && <div className="text-red-500 text-sm mt-1 font-medium">{errors.description}</div>}
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -82,6 +89,8 @@ export default function EmergencyReport() {
                     </button>
                     <span className="text-sm text-gray-600 font-medium">{locationStatus}</span>
                 </div>
+                {/* 3. Added error displays for location if they fail backend validation */}
+                {errors.latitude && <div className="text-red-500 text-sm mt-1 font-medium">Location error: {errors.latitude}</div>}
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Photo Evidence (Optional)</label>
@@ -90,6 +99,8 @@ export default function EmergencyReport() {
                         onChange={e => setData('attachment', e.target.files[0])}
                         className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
                     />
+                    {/* 4. Added error display for attachments (e.g. if file is over 2MB or not an image) */}
+                    {errors.attachment && <div className="text-red-500 text-sm mt-1 font-medium">{errors.attachment}</div>}
                 </div>
 
                 <button 

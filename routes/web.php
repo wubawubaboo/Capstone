@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -29,9 +30,38 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::middleware(['auth', 'role:resident'])->group(function () {
-    Route::get('/resident/emergency-report', function () {
-        return Inertia::render('Resident/EmergencyReport');
-    })->name('reports.create');
+Route::middleware(['auth'])->prefix('resident')->group(function () {
     
+    // Group all resident routes and apply the check
+    Route::group(['middleware' => function ($request, $next) {
+        if ($request->user()->role !== 'resident') {
+            abort(403, 'Unauthorized action.');
+        }
+        return $next($request);
+    }], function () {
+        
+        Route::get('/home', function () {
+            return Inertia::render('Resident/Home');
+        })->name('home');
+
+        Route::get('/profile', function () {
+            return Inertia::render('Resident/Profile');
+        })->name('profile');
+
+        Route::get('/emergency-report', function () {
+            return Inertia::render('Resident/EmergencyReport');
+        })->name('reports.create');
+        
+        Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+
+        Route::get('/document-request', function () {
+            return Inertia::render('Resident/DocumentRequest');
+        })->name('documents.create');
+        
+        Route::post('/document-request', [DocumentRequestController::class, 'store'])->name('documents.store');
+
+        Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])
+            ->name('reports.attachment');
+            
+    });
 });
