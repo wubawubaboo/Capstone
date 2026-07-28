@@ -19,14 +19,14 @@ export default function Home() {
                 <h3 className="font-bold text-xs text-gray-700 mb-3 uppercase tracking-wider">Quick Menu</h3>
                 
                 <div className="grid grid-cols-2 gap-3">
-                    <Link href="#" className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center justify-center min-h-[100px] hover:border-red-500 hover:shadow-md transition-all">
+                    <Link href="/resident/emergency-report" className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center justify-center min-h-[100px] hover:border-red-500 hover:shadow-md transition-all">
                         <div className="text-2xl mb-2">🚨</div>
                         <span className="text-[10px] font-bold text-blue-900 leading-tight">Request Emergency Assistance</span>
                     </Link>
 
-                    <Link href="#" className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center justify-center min-h-[100px] hover:border-red-500 hover:shadow-md transition-all">
+                    <Link href="/resident/service-request" className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center justify-center min-h-[100px] hover:border-red-500 hover:shadow-md transition-all">
                         <div className="text-2xl mb-2">📝</div>
-                        <span className="text-[10px] font-bold text-blue-900 leading-tight">File Incident Report</span>
+                        <span className="text-[10px] font-bold text-blue-900 leading-tight">Service Requests</span>
                     </Link>
 
                     <Link href="/resident/document-request" className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center justify-center min-h-[100px] hover:border-blue-500 hover:shadow-md transition-all">
