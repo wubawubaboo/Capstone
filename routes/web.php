@@ -76,3 +76,25 @@ Route::prefix('secretary')->name('secretary.')->group(function () {
         return Inertia::render('Secretary/Analytics');
     })->name('analytics');
 });
+
+Route::prefix('vawc')->name('vawc.')->group(function () {
+    // 1. Blotter Management Page
+    Route::get('/blotter', function () {
+        return Inertia::render('VAWC/BlotterManagement');
+    })->name('blotter.index');
+
+    // 2. Case History & Disposition
+    Route::get('/blotter/{id}/history', function ($id) {
+        return Inertia::render('VAWC/CaseHistory', ['caseId' => $id]);
+    })->name('blotter.history');
+
+    // 3. Mediation Calendar Page
+    Route::get('/mediation-calendar', function () {
+        return Inertia::render('VAWC/MediationCalendar');
+    })->name('calendar');
+
+    // 4. Analytics Dashboard
+    Route::get('/analytics', function () {
+        return Inertia::render('VAWC/Analytics');
+    })->name('analytics');
+});
