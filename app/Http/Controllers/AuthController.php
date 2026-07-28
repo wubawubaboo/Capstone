@@ -61,9 +61,9 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return match ($user->role) {
-                'admin'     => redirect()->intended('/admin/analytics'),
-                'secretary' => redirect()->intended('/secretary/analytics'),
-                'vawc'      => redirect()->intended('/vawc/analytics'),
+                'admin'     => redirect('/admin/analytics'),
+                'secretary' => redirect('/secretary/analytics'),
+                'vawc'      => redirect('/vawc/analytics'),
             };
         }
 
@@ -101,5 +101,31 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    public function staffRegister(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'barangay_id' => ['required', 'exists:barangays,id'],
+            'role' => ['required'],
+        ]);
+
+        $user = User::create([
+            'full_name' => $request->name,
+            'phone_number' => $request->phone_number,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+            'barangay_id' => $request->barangay_id,
+        ]);
+
+        Auth::login($user);
+        return match ($user->role) {
+            'admin'     => redirect('/admin/analytics'),
+            'secretary' => redirect('/secretary/analytics'),
+            'vawc'      => redirect('/vawc/analytics'),
+        };
     }
 }
