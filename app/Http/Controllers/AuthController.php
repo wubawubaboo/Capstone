@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Barangay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -25,7 +24,11 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('/dashboard');
+            $user = Auth::user();
+            if ($user->role !== 'resident') {
+                Auth::logout();
+            }
+            return redirect('/resident/home');
         }
 
         return back()->withErrors([
@@ -33,14 +36,40 @@ class AuthController extends Controller
         ])->onlyInput('phone_number');
     }
 
-    public function showRegistration()
+    public function showStaffLogin()
     {
-        $barangays = Barangay::select('id', 'name')->orderBy('name')->get();
-
-        return Inertia::render('Auth/Registration', [
-            'barangays' => $barangays
-        ]);
+        return Inertia::render('Auth/StaffLogin');
     }
+
+    public function staffLogin(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+
+            if ($user->role === 'resident') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Residents must use the public login page.',
+                ]);
+            }
+
+            $request->session()->regenerate();
+
+            return match ($user->role) {
+                'admin'     => redirect()->intended('/admin/analytics'),
+                'secretary' => redirect()->intended('/secretary/analytics'),
+                'vawc'      => redirect()->intended('/vawc/analytics'),
+            };
+        }
+
+        return back()->withErrors(['email' => 'Invalid staff credentials.']);
+    }
+
 
     public function register(Request $request)
     {
@@ -61,7 +90,7 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect('/dashboard');
+        return redirect('/resident/home');
     }
 
     public function logout(Request $request)
