@@ -11,7 +11,6 @@ export default function Hotlines() {
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       <div className="bg-red-700 text-white p-4 flex items-center">
-        <Link href="/" className="mr-4 text-xl font-bold">←</Link>
         <h1 className="text-lg font-bold">Emergency Hotlines</h1>
       </div>
       <div className="p-4 space-y-3">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Barangay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -10,60 +11,59 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
-    // Render Login Page
     public function showLogin()
     {
         return Inertia::render('Auth/Login');
     }
 
-    // Handle Login Logic
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'phone_number' => ['required', 'string'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-
-            // Redirect to intended page or default dashboard
             return redirect()->intended('/dashboard');
         }
 
         return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
+            'phone_number' => 'The provided phone number or password does not match our records.',
+        ])->onlyInput('phone_number');
     }
 
-    // Render Registration Page
     public function showRegistration()
     {
-        return Inertia::render('Auth/Registration');
+        $barangays = Barangay::select('id', 'name')->orderBy('name')->get();
+
+        return Inertia::render('Auth/Registration', [
+            'barangays' => $barangays
+        ]);
     }
 
-    // Handle Registration Logic
     public function register(Request $request)
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'barangay_id' => ['required', 'exists:barangays,id'],
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'full_name' => $request->name,
+            'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
+            'role' => 'resident',
+            'barangay_id' => $request->barangay_id,
         ]);
 
-        // Automatically log the user in after registration
         Auth::login($user);
 
         return redirect('/dashboard');
     }
 
-    // Handle Logout
     public function logout(Request $request)
     {
         Auth::logout();

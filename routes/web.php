@@ -2,10 +2,17 @@
 
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 
 Route::get('/', function () {
+    // Check if a user is currently logged in
+    if (Auth::check()) {
+        if (Auth::user()->role === 'resident') {
+            return redirect('/resident/home'); 
+        }
+    }
     return Inertia::render('Public/LandingPage');
 })->name('landing');
 

@@ -1,12 +1,13 @@
 import React from 'react';
 import { useForm, Head, Link } from '@inertiajs/react';
 
-export default function Registration() {
+export default function Registration({barangays}) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        email: '',
+        phone_number: '',
         password: '',
         password_confirmation: '',
+        barangay_id: '',
     });
 
     const submit = (e) => {
@@ -22,7 +23,6 @@ export default function Registration() {
                 <h2 className="text-2xl font-bold text-center mb-6">Create an Account</h2>
                 
                 <form onSubmit={submit}>
-                    {/* Name Field */}
                     <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2">Name</label>
                         <input
@@ -35,20 +35,39 @@ export default function Registration() {
                         {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
                     </div>
 
-                    {/* Email Field */}
+                    {/* Phone Number Field */}
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
                         <input
-                            type="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
+                            type="tel"
+                            value={data.phone_number}
+                            onChange={(e) => setData('phone_number', e.target.value)}
                             className="w-full px-3 py-2 border rounded-md"
                             required
                         />
-                        {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
+                        {errors.phone_number && <div className="text-red-500 text-sm mt-1">{errors.phone_number}</div>}
                     </div>
 
-                    {/* Password Field */}
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Barangay</label>
+                        <select
+                            value={data.barangay_id}
+                            onChange={(e) => setData('barangay_id', e.target.value)}
+                            className="w-full px-3 py-2 border rounded-md bg-white"
+                            required
+                        >
+                            <option value="" disabled>Select your barangay</option>
+                            
+                            {/* Dynamically render the barangays */}
+                            {barangays && barangays.map((barangay) => (
+                                <option key={barangay.id} value={barangay.id}>
+                                    {barangay.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.barangay_id && <div className="text-red-500 text-sm mt-1">{errors.barangay_id}</div>}
+                    </div>
+
                     <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2">Password</label>
                         <input
@@ -61,7 +80,6 @@ export default function Registration() {
                         {errors.password && <div className="text-red-500 text-sm mt-1">{errors.password}</div>}
                     </div>
 
-                    {/* Password Confirmation Field */}
                     <div className="mb-6">
                         <label className="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
                         <input

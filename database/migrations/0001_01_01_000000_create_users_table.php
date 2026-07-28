@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('barangay_id')->constrained()->cascadeOnDelete();
             $table->string('full_name');
             $table->string('phone_number')->unique();
-            $table->string('password'); // Laravel uses 'password' by default for auth
-            $table->string('role'); // e.g., 'resident', 'secretary', 'admin'
+            $table->string('password');
+            $table->enum('role', ['admin', 'secretary', 'resident', 'vawc']);
             $table->rememberToken();
             $table->timestamps();
         });
