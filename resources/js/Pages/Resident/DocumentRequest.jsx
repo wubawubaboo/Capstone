@@ -4,7 +4,7 @@ import { Link, router } from '@inertiajs/react';
 export default function DocumentRequest() {
   function handleSubmit(e) {
     e.preventDefault();
-    router.post('/resident/document-request', {});
+    post('/resident/document-request', {});
   }
 
   return (

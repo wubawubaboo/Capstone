@@ -32,14 +32,12 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth'])->prefix('resident')->group(function () {
     
-    // Group all resident routes and apply the check
     Route::group(['middleware' => function ($request, $next) {
         if ($request->user()->role !== 'resident') {
             abort(403, 'Unauthorized action.');
         }
         return $next($request);
     }], function () {
-        
         Route::get('/home', function () {
             return Inertia::render('Resident/Home');
         })->name('home');
@@ -62,6 +60,8 @@ Route::middleware(['auth'])->prefix('resident')->group(function () {
 
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])
             ->name('reports.attachment');
+
+        Route::post('/logout', [AuthController::class, 'logout']);
             
     });
 });

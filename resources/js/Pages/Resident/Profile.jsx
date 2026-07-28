@@ -1,12 +1,13 @@
 import React from 'react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
+import { Link } from '@inertiajs/react';
 
 export default function Profile() {
   return (
     <div className="-mt-4 -mx-4 pb-6">
       {/* Profile Header Banner */}
       <div className="bg-blue-900 h-32 relative">
-         <button className="absolute top-4 right-4 text-white">⚙️</button>
+         <Link href='/resident/logout' method="post" as="button" className="absolute top-4 right-4 text-white hover:opacity-80 transition" title="Logout">🚪</Link>
          <div className="absolute -bottom-6 left-6 flex items-end">
             <div className="w-16 h-16 bg-white rounded-full border-2 border-white overflow-hidden shadow-sm flex items-center justify-center text-2xl">👤</div>
             <div className="ml-3 mb-1">
@@ -49,7 +50,6 @@ export default function Profile() {
   );
 }
 
-// Reusable Card Component
 function StatusCard({ type, title, date, status, statusColor, id, note }) {
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">

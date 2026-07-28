@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Report;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Response;
 
 class ReportController extends Controller {
     
@@ -34,7 +35,7 @@ class ReportController extends Controller {
             'status' => 'Pending',
         ]);
 
-        return redirect()->back()->with('success', 'Emergency report submitted successfully. Responders have been notified.');
+        return redirect()->route('home')->with('success', 'Emergency report submitted successfully.');  
     }
 
     public function showAttachment(Report $report) {

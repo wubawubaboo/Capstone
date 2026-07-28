@@ -3,7 +3,6 @@ import { useForm } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
 export default function EmergencyReport() {
-    // 1. Changed latitude and longitude initial states to null instead of ''
     const { data, setData, post, processing, errors, reset } = useForm({
         incident_type: '',
         description: '',
@@ -34,15 +33,7 @@ export default function EmergencyReport() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('reports.store'), {
-            // 2. Force FormData ensures the file is sent correctly
-            forceFormData: true,
-            onSuccess: () => {
-                reset();
-                setLocationStatus('');
-                alert('Emergency report submitted successfully.'); // Quick feedback
-            },
-        });
+        post('/resident/reports');
     };
 
     return (
