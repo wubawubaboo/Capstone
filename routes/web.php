@@ -21,16 +21,18 @@ Route::get('/hotlines', function () {
     return Inertia::render('Public/Hotlines');
 })->name('hotlines');
 
-
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
     
     Route::get('/register', [AuthController::class, 'showRegistration'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
+
+    Route::get('/portal/secure-login', [AuthController::class, 'showStaffLogin'])->name('login');
+    Route::post('/portal/secure-login', [AuthController::class, 'staffLogin']);
 });
 
-Route::middleware(['auth'])->prefix('resident')->group(function () {
+Route::middleware('auth')->prefix('resident')->group(function () {
     
     Route::group(['middleware' => function ($request, $next) {
         if ($request->user()->role !== 'resident') {
@@ -63,5 +65,44 @@ Route::middleware(['auth'])->prefix('resident')->group(function () {
 
         Route::post('/logout', [AuthController::class, 'logout']);
             
+    });
+});
+
+Route::middleware('auth')->prefix('secretary')->group(function () {
+    
+    Route::group(['middleware' => function ($request, $next) {
+        if ($request->user()->role !== 'secretary') {
+            abort(403, 'Unauthorized action.');
+        }
+        return $next($request);
+    }], function () {
+
+
+    });
+});
+
+Route::middleware('auth')->prefix('vawc')->group(function () {
+    
+    Route::group(['middleware' => function ($request, $next) {
+        if ($request->user()->role !== 'vawc') {
+            abort(403, 'Unauthorized action.');
+        }
+        return $next($request);
+    }], function () {
+
+
+    });
+});
+
+Route::middleware('auth')->prefix('admin')->group(function () {
+    
+    Route::group(['middleware' => function ($request, $next) {
+        if ($request->user()->role !== 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+        return $next($request);
+    }], function () {
+
+
     });
 });
