@@ -59,13 +59,13 @@ export default function BlotterManagement({ blotters }) {
                                         {row.case_number}
                                     </td>
                                     <td className="py-3 px-4 text-slate-700">
-                                        {row.report?.user?.full_name || 'Anonymous'}
+                                        {row.complainant_name || row.report?.user?.full_name || 'Anonymous'}
                                     </td>
                                     <td className="py-3 px-4 font-medium text-amber-700">
                                         {row.receiver?.full_name || row.receiver_name || 'Unknown'}
                                     </td>
                                     <td className="py-3 px-4 text-slate-700">
-                                        {row.report?.incident_type || 'N/A'}
+                                        {row.incident_type || row.report?.incident_type || 'N/A'}
                                     </td>
                                     <td className="py-3 px-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(row.status)}`}>

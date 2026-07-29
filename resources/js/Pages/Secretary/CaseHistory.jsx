@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import SecretaryLayout from '@/Layouts/SecretaryLayout';
 
 export default function CaseHistory({ blotter }) {
     if (!blotter) return <div className="p-6">Loading...</div>;
@@ -7,7 +8,7 @@ export default function CaseHistory({ blotter }) {
     const caseId = blotter.case_number || `BLT-${blotter.id}`;
 
     return (
-        <div className="min-h-screen bg-slate-100 p-6 font-sans">
+        <SecretaryLayout>
             <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm mb-6 border border-slate-200">
                 <div className="flex items-center gap-3">
                     <Link href={route('secretary.blotters')} className="text-slate-600 hover:text-slate-900 text-lg">
@@ -31,7 +32,9 @@ export default function CaseHistory({ blotter }) {
                         <h2 className="text-2xl font-extrabold text-[#0a2342]">{caseId}</h2>
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase">Complainant</p>
-                            <p className="font-bold text-slate-800 text-base">{blotter.report?.user?.full_name || 'Anonymous'}</p>
+                            <p className="font-bold text-slate-800 text-base">
+                                {blotter.complainant_name || blotter.report?.user?.full_name || 'Anonymous'}
+                            </p>
                         </div>
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase">Respondent (Accused)</p>
@@ -41,7 +44,9 @@ export default function CaseHistory({ blotter }) {
                         </div>
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase">Incident</p>
-                            <p className="font-bold text-slate-800 text-base">{blotter.report?.incident_type}</p>
+                            <p className="font-bold text-slate-800 text-base">
+                                {blotter.incident_type || blotter.report?.incident_type || 'N/A'}
+                            </p>
                         </div>
                     </div>
 
@@ -61,7 +66,9 @@ export default function CaseHistory({ blotter }) {
                                     {new Date(blotter.created_at).toLocaleDateString()}
                                 </p>
                                 <p className="font-bold text-slate-800 text-sm">Initial Report Filed</p>
-                                <p className="text-xs text-slate-500">{blotter.report?.description}</p>
+                                <p className="text-xs text-slate-500">
+                                    {blotter.incident_description || blotter.report?.description || 'No description provided.'}
+                                </p>
                             </div>
 
                             {blotter.scheduled_date && (
@@ -92,6 +99,6 @@ export default function CaseHistory({ blotter }) {
                     </div>
                 </div>
             </div>
-        </div>
+        </SecretaryLayout>
     );
 }
