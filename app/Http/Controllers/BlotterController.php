@@ -22,7 +22,6 @@ class BlotterController extends Controller
     {
         $barangayId = Auth::user()->barangay_id;
 
-        // Fetch pending reports that haven't been turned into a blotter yet
         $pendingReports = Report::with('user')
             ->whereDoesntHave('blotter')
             ->where('status', 'Pending')
@@ -36,9 +35,6 @@ class BlotterController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created Blotter Record in the database.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([

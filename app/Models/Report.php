@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Report extends Model {
     use HasFactory;
 
+    public function user() {return $this->belongsTo(User::class, 'user_id');}
+    public function blotter() { return $this->hasOne(BlotterRecord::class, 'report_id');}
+
     protected $fillable = [
         'user_id',
         'incident_type',
@@ -25,7 +28,7 @@ class Report extends Model {
 
     public function getAttachmentUrlAttribute() {
         if ($this->attachment_path) {
-            return route('reports.attachment', $this->id);
+            return route('resident.reports.attachment', $this->id);
         }
         return null;
     }
