@@ -11,14 +11,14 @@ export default function LandingPage() {
       
       <div className="w-full max-w-sm space-y-4 mb-12">
         <Link 
-          href="/hotlines"
+          href={route('hotlines')}
           className="block text-center w-full bg-red-700 text-white font-bold py-3 rounded-full shadow-md hover:bg-red-800 transition"
         >
           Emergency Hotlines
         </Link>
         
         <Link 
-          href="/login"
+          href={route('login')}
           className="block text-center w-full bg-blue-900 text-white font-bold py-3 rounded-full shadow-md hover:bg-blue-950 transition"
         >
           Login

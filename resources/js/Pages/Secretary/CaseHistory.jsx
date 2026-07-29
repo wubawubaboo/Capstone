@@ -8,7 +8,6 @@ export default function CaseHistory({ blotter }) {
 
     return (
         <div className="min-h-screen bg-slate-100 p-6 font-sans">
-            {/* Header */}
             <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm mb-6 border border-slate-200">
                 <div className="flex items-center gap-3">
                     <Link href={route('secretary.blotters')} className="text-slate-600 hover:text-slate-900 text-lg">
@@ -26,19 +25,21 @@ export default function CaseHistory({ blotter }) {
                 </div>
             </div>
 
-            {/* Main Content Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Left Panel - Case Summary */}
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div className="space-y-6">
-                        <h2 className="text-2xl font-extrabold text-[#0a2342]">#{caseId}</h2>
+                        <h2 className="text-2xl font-extrabold text-[#0a2342]">{caseId}</h2>
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase">Complainant</p>
                             <p className="font-bold text-slate-800 text-base">{blotter.report?.user?.full_name || 'Anonymous'}</p>
                         </div>
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase">Respondent (Accused)</p>
-                            <p className="font-bold text-slate-800 text-base">{blotter.receiver?.full_name || 'Not assigned yet'}</p>
+                            {/* Updated Logic Here */}
+                            <p className="font-bold text-amber-700 text-base">
+                                {blotter.receiver?.full_name || blotter.receiver_name || 'Unknown'}
+                            </p>
                         </div>
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase">Incident</p>
@@ -57,7 +58,6 @@ export default function CaseHistory({ blotter }) {
                         <h3 className="text-lg font-bold text-slate-800 mb-6">Case Activity History</h3>
                         
                         <div className="relative border-l-2 border-slate-200 ml-3 space-y-6 pl-6">
-                            {/* Initial Filing */}
                             <div className="relative">
                                 <span className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-slate-800 border-2 border-white"></span>
                                 <p className="text-xs font-bold text-slate-400 uppercase">
@@ -67,7 +67,6 @@ export default function CaseHistory({ blotter }) {
                                 <p className="text-xs text-slate-500">{blotter.report?.description}</p>
                             </div>
 
-                            {/* Dynamic Schedule (if any) */}
                             {blotter.scheduled_date && (
                                 <div className="relative">
                                     <span className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white"></span>
@@ -83,7 +82,6 @@ export default function CaseHistory({ blotter }) {
                         </div>
                     </div>
 
-                    {/* Bottom Action Bar */}
                     <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-100">
                         <button className="border border-slate-300 text-slate-700 px-4 py-2 rounded text-xs font-bold hover:bg-slate-50">
                             📝 UPDATE LOG

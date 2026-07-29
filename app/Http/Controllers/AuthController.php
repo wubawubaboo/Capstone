@@ -17,11 +17,11 @@ class AuthController extends Controller
     private function redirectBasedOnRole()
     {
         return match (Auth::user()->role) {
-            'resident'  => redirect('/resident/home'),
-            'admin'     => redirect('/admin/analytics'),
-            'secretary' => redirect('/secretary/analytics'),
-            'vawc'      => redirect('/vawc/analytics'),
-            default     => redirect('/'),
+            'resident'  => to_route('resident.home'),
+            'admin'     => to_route('admin.analytics'),
+            'secretary' => to_route('secretary.analytics'),
+            'vawc'      => to_route('vawc.analytics'),
+            default     => to_route('landing'),
         };
     }
 
@@ -45,12 +45,13 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $user = Auth::user();
             
-            // If a staff member tries to use the resident login, log them out
             if ($user->role !== 'resident') {
                 Auth::logout();
-            } else {
-                return redirect('/resident/home');
+                return back()->withErrors([
+                    'phone_number' => 'Staff members must use the secure staff portal login.',
+                ]);
             }
+            return to_route('resident.home');
         }
 
         return back()->withErrors([
@@ -122,7 +123,7 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect('/resident/home');
+        return to_route('resident.home');
     }
 
     public function showStaffRegistration() 
@@ -155,6 +156,7 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+        
         return $this->redirectBasedOnRole();
     }
 
@@ -165,7 +167,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return to_route('landing');
     }
 
     public function accountRequests()

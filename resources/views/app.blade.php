@@ -7,6 +7,8 @@
     <!-- Tailwind via CDN for simplicity -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    @routes
+    
     @viteReactRefresh
     @vite('resources/js/app.jsx')
     @inertiaHead

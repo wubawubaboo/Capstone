@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BlotterController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +12,7 @@ use Inertia\Inertia;
 Route::get('/', function () {
     if (Auth::check()) {
         if (Auth::user()->role === 'resident') {
-            return redirect('/resident/home'); 
+            return to_route('resident.home'); 
         }
     }
     return Inertia::render('Public/LandingPage');
@@ -29,13 +28,13 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegistration'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 
-Route::get('/portal/secure-login', [AuthController::class, 'showStaffLogin'])->name('login');
+Route::get('/portal/secure-login', [AuthController::class, 'showStaffLogin'])->name('staff.login');
 Route::post('/portal/secure-login', [AuthController::class, 'staffLogin']);
 
-Route::get('/portal/secure-register', [AuthController::class, 'showStaffRegistration'])->name('register');
+Route::get('/portal/secure-register', [AuthController::class, 'showStaffRegistration'])->name('staff.register');
 Route::post('/portal/secure-register', [AuthController::class, 'staffRegister']);
 
-Route::middleware('auth')->prefix('resident')->group(function () {
+Route::middleware('auth')->prefix('resident')->name('resident.')->group(function () {
     
     Route::group(['middleware' => function ($request, $next) {
         if ($request->user()->role !== 'resident') {
@@ -66,13 +65,12 @@ Route::middleware('auth')->prefix('resident')->group(function () {
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])
             ->name('reports.attachment');
 
-        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             
     });
 });
 
-Route::middleware('auth')->prefix('secretary')->group(function () {
-    
+Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(function () {
     Route::group(['middleware' => function ($request, $next) {
         if ($request->user()->role !== 'secretary') {
             abort(403, 'Unauthorized action.');
@@ -80,54 +78,27 @@ Route::middleware('auth')->prefix('secretary')->group(function () {
         return $next($request);
     }], function () {
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
-
-        // Document Requests Management
-        Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests');
-        Route::post('/document-requests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])->name('document-requests.update-status');
-
-        // Blotter & Case Management
-        Route::get('/blotter-management', [BlotterController::class, 'index'])->name('blotters');
-        Route::post('/blotters/{blotter}/schedule-mediation', [BlotterController::class, 'scheduleMediation'])->name('blotters.schedule-mediation');
-        Route::post('/blotters/{blotter}/vawc-detail', [BlotterController::class, 'storeVawcDetail'])->name('blotters.store-vawc');
-        
-        // Case History
-        Route::get('/case-history', [BlotterController::class, 'caseHistory'])->name('case-history');
-
-        // Mediation
-        Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
-        Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');
-
-        Route::get('/account-requests', [AuthController::class, 'accountRequests'])->name('account-requests');
-
-        // General Secretariat Action
-        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-
     });
 });
 
-Route::middleware('auth')->prefix('vawc')->group(function () {
-    
+Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
     Route::group(['middleware' => function ($request, $next) {
         if ($request->user()->role !== 'vawc') {
             abort(403, 'Unauthorized action.');
         }
         return $next($request);
     }], function () {
-
-
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     });
 });
 
-Route::middleware('auth')->prefix('admin')->group(function () {
-    
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::group(['middleware' => function ($request, $next) {
         if ($request->user()->role !== 'admin') {
             abort(403, 'Unauthorized action.');
         }
         return $next($request);
     }], function () {
-
-
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     });
 });
