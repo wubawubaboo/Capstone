@@ -8,15 +8,17 @@ export default function Registration({ barangays }) {
         password: '',
         password_confirmation: '',
         barangay_id: '',
+        id_photo: null,
     });
 
     const submit = (e) => {
         e.preventDefault();
+        // Inertia automatically converts this to multipart/form-data because id_photo is a file
         post(route('register'));
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 pt-12 pb-12">
             <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-200">
                 <h1 className="text-2xl font-bold text-blue-900 mb-6 text-center">Resident Registration</h1>
 
@@ -54,11 +56,24 @@ export default function Registration({ barangays }) {
                             required
                         >
                             <option value="">-- Select Barangay --</option>
-                            {barangays.map((b) => (
+                            {barangays?.map((b) => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
                         {errors.barangay_id && <div className="text-red-600 text-xs mt-1">{errors.barangay_id}</div>}
+                    </div>
+
+                    {/* NEW ID PHOTO UPLOAD FIELD */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Valid ID Photo (Required for Verification)</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setData('id_photo', e.target.files[0])}
+                            className="w-full border border-gray-300 rounded p-2.5 text-sm bg-white cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-900 hover:file:bg-blue-100"
+                            required
+                        />
+                        {errors.id_photo && <div className="text-red-600 text-xs mt-1">{errors.id_photo}</div>}
                     </div>
 
                     <div>
@@ -87,9 +102,9 @@ export default function Registration({ barangays }) {
                     <button
                         type="submit"
                         disabled={processing}
-                        className="w-full bg-blue-900 text-white font-bold py-2.5 rounded hover:bg-blue-950 transition text-sm"
+                        className="w-full bg-blue-900 text-white font-bold py-2.5 rounded hover:bg-blue-950 transition text-sm disabled:opacity-50"
                     >
-                        Register
+                        {processing ? 'Submitting...' : 'Register Account'}
                     </button>
                 </form>
 

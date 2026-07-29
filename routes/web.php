@@ -100,8 +100,9 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');
 
         Route::get('/account-requests', [AuthController::class, 'accountRequests'])->name('account-requests');
+        Route::post('/account-requests/{user}/approve', [AuthController::class, 'approveAccount'])->name('account-requests.approve');
+        Route::post('/account-requests/{user}/reject', [AuthController::class, 'rejectAccount'])->name('account-requests.reject');
 
-        // General Secretariat Action
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });

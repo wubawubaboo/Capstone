@@ -24,6 +24,8 @@ class User extends Authenticatable
         'password',
         'role',
         'barangay_id',
+        'id_photo_path',
+        'is_verified',
     ];
 
     /**

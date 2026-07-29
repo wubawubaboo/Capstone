@@ -13,11 +13,16 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('barangay_id')->constrained()->cascadeOnDelete();
             $table->string('full_name');
             $table->string('phone_number')->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'secretary', 'resident', 'vawc']);
+            $table->string('role')->default('resident');
+            $table->foreignId('barangay_id')->nullable()->constrained()->nullOnDelete();
+            
+            // Add these two new columns:
+            $table->string('id_photo_path')->nullable();
+            $table->boolean('is_verified')->default(false);
+            
             $table->rememberToken();
             $table->timestamps();
         });

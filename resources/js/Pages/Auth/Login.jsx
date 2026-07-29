@@ -17,6 +17,13 @@ export default function Login() {
             <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-200">
                 <h1 className="text-2xl font-bold text-blue-900 mb-6 text-center">Resident Login</h1>
 
+                {/* SUCCESS MESSAGE FOR REGISTRATION */}
+                {errors.success && (
+                    <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded text-sm font-semibold text-center">
+                        {errors.success}
+                    </div>
+                )}
+
                 <form onSubmit={submit} className="space-y-4">
                     <div>
                         <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Phone Number</label>
@@ -45,9 +52,9 @@ export default function Login() {
                     <button
                         type="submit"
                         disabled={processing}
-                        className="w-full bg-blue-900 text-white font-bold py-2.5 rounded hover:bg-blue-950 transition text-sm"
+                        className="w-full bg-blue-900 text-white font-bold py-2.5 rounded hover:bg-blue-950 transition text-sm disabled:opacity-50"
                     >
-                        Login
+                        {processing ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
 

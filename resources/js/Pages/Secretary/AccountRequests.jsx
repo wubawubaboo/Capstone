@@ -1,5 +1,6 @@
 import React from 'react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
+import { Link } from '@inertiajs/react';
 
 export default function AccountRequests({ requests }) {
     const accounts = requests?.data || [];
@@ -25,15 +26,40 @@ export default function AccountRequests({ requests }) {
                                 <td className="py-4 px-2 font-medium text-slate-800">{item.full_name}</td>
                                 <td className="py-4 px-2 text-slate-600">{item.phone_number}</td>
                                 <td className="py-4 px-2 text-slate-600">{item.barangay?.name || 'N/A'}</td>
-                                <td className="py-4 px-2 text-blue-600 underline cursor-pointer">View ID</td>
+                                <td className="py-4 px-2 font-bold">
+                                    {item.id_photo_path ? (
+                                        <a 
+                                            href={route('secretary.account-requests.id-photo', item.id)} 
+                                            target="_blank" 
+                                            rel="noreferrer" 
+                                            className="text-blue-600 hover:text-blue-800 underline"
+                                        >
+                                            🔍 View ID
+                                        </a>
+                                    ) : (
+                                        <span className="text-red-500">No ID Provided</span>
+                                    )}
+                                </td>
                                 <td className="py-4 px-2 text-center">
                                     <div className="flex justify-center gap-2">
-                                        <button className="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">
+                                        <Link 
+                                            href={route('secretary.account-requests.approve', item.id)} 
+                                            method="post" 
+                                            as="button" 
+                                            preserveScroll
+                                            className="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700 transition"
+                                        >
                                             APPROVE
-                                        </button>
-                                        <button className="bg-red-700 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-red-800">
+                                        </Link>
+                                        <Link 
+                                            href={route('secretary.account-requests.reject', item.id)} 
+                                            method="post" 
+                                            as="button" 
+                                            preserveScroll
+                                            className="bg-red-700 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-red-800 transition"
+                                        >
                                             REJECT
-                                        </button>
+                                        </Link>
                                     </div>
                                 </td>
                             </tr>
