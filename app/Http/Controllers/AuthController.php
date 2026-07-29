@@ -190,7 +190,7 @@ class AuthController extends Controller
     public function accountRequests()
     {
         $requests = User::where('role', 'resident')
-            ->where('is_verified', false) // Only fetch unverified accounts
+            ->where('is_verified', false)
             ->with('barangay')
             ->latest()
             ->paginate(15);
@@ -208,7 +208,6 @@ class AuthController extends Controller
 
     public function rejectAccount(User $user)
     {
-        // Delete the ID photo from storage to save space
         if ($user->id_photo_path) {
             Storage::disk('public')->delete($user->id_photo_path);
         }

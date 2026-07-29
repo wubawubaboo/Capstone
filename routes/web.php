@@ -102,6 +102,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::get('/account-requests', [AuthController::class, 'accountRequests'])->name('account-requests');
         Route::post('/account-requests/{user}/approve', [AuthController::class, 'approveAccount'])->name('account-requests.approve');
         Route::post('/account-requests/{user}/reject', [AuthController::class, 'rejectAccount'])->name('account-requests.reject');
+        Route::get('/account-requests/{user}/id-photo', [AuthController::class, 'showIdPhoto'])->name('account-requests.id-photo');
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
