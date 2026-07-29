@@ -26,7 +26,6 @@ export default function CaseHistory({ blotter }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Left Panel - Case Summary */}
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div className="space-y-6">
                         <h2 className="text-2xl font-extrabold text-[#0a2342]">{caseId}</h2>
@@ -36,7 +35,6 @@ export default function CaseHistory({ blotter }) {
                         </div>
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase">Respondent (Accused)</p>
-                            {/* Updated Logic Here */}
                             <p className="font-bold text-amber-700 text-base">
                                 {blotter.receiver?.full_name || blotter.receiver_name || 'Unknown'}
                             </p>
@@ -52,7 +50,6 @@ export default function CaseHistory({ blotter }) {
                     </button>
                 </div>
 
-                {/* Right Panel - Activity Timeline */}
                 <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800 mb-6">Case Activity History</h3>

@@ -51,7 +51,6 @@ export default function MediationMeetingDetails({ blotter }) {
                         Complainant Signature
                     </div>
                     <div className="border border-slate-200 h-24 rounded flex flex-col items-center justify-center text-xs text-slate-400 bg-slate-50">
-                        {/* Updated Logic Here */}
                         <span className="font-bold text-amber-700 uppercase mb-2">
                             {blotter.receiver?.full_name || blotter.receiver_name || 'Respondent'}
                         </span>

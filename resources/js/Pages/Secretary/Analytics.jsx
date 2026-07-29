@@ -11,51 +11,45 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
 export default function Analytics({ auth, stats, documentTrends, blotterStatusData }) {
     return (
-        <SecretaryLayout user={auth.user}>
+        <SecretaryLayout user={auth?.user}>
             <Head title="Secretary Analytics" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                    
-                    {/* Header */}
                     <div className="mb-6">
                         <h2 className="text-2xl font-bold text-gray-800">Analytics Overview</h2>
                         <p className="text-sm text-gray-500">Track and monitor barangay requests and blotter records.</p>
                     </div>
 
-                    {/* Quick Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard 
                             title="Total Document Requests" 
-                            value={stats.document_requests} 
+                            value={stats?.document_requests || 0} 
                             icon={<FileText className="w-6 h-6 text-blue-600" />} 
                         />
                         <StatCard 
                             title="Pending Documents" 
-                            value={stats.pending_documents} 
+                            value={stats?.pending_documents || 0} 
                             icon={<Clock className="w-6 h-6 text-yellow-500" />} 
                         />
                         <StatCard 
                             title="Total Blotter Records" 
-                            value={stats.blotter_records} 
+                            value={stats?.blotter_records || 0} 
                             icon={<AlertOctagon className="w-6 h-6 text-red-500" />} 
                         />
                         <StatCard 
                             title="Service Requests" 
-                            value={stats.service_requests} 
+                            value={stats?.service_requests || 0} 
                             icon={<Wrench className="w-6 h-6 text-green-500" />} 
                         />
                     </div>
 
-                    {/* Charts Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-                        
-                        {/* Bar Chart: Document Trends */}
                         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                             <h3 className="text-lg font-semibold text-gray-700 mb-6">Document Requests (Last 6 Months)</h3>
                             <div className="h-[300px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={documentTrends}>
+                                    <BarChart data={documentTrends || []}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
@@ -66,11 +60,10 @@ export default function Analytics({ auth, stats, documentTrends, blotterStatusDa
                             </div>
                         </div>
 
-                        {/* Pie Chart: Blotter Status Distribution */}
                         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                             <h3 className="text-lg font-semibold text-gray-700 mb-6">Blotter Records by Status</h3>
                             <div className="h-[300px] w-full flex justify-center items-center">
-                                {blotterStatusData.length > 0 ? (
+                                {(blotterStatusData && blotterStatusData.length > 0) ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
@@ -95,7 +88,6 @@ export default function Analytics({ auth, stats, documentTrends, blotterStatusDa
                                 )}
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -103,7 +95,6 @@ export default function Analytics({ auth, stats, documentTrends, blotterStatusDa
     );
 }
 
-// Reusable Subcomponent for Stats Card
 function StatCard({ title, value, icon }) {
     return (
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 flex items-center justify-between">

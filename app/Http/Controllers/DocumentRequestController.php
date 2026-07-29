@@ -12,8 +12,8 @@ class DocumentRequestController extends Controller
 {
     public function index()
     {
-        $requests = DocumentRequest::with(['requester', 'documentType'])->latest()->paginate(15);
-        return Inertia::render('Secretary/DocumentRequests', compact('requests'));
+    $requests = DocumentRequest::with(['requester', 'documentType'])->latest()->paginate(15);
+    return Inertia::render('Secretary/DocumentRequests', compact('requests'));
     }
 
     public function store(Request $request)

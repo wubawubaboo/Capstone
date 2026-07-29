@@ -7,8 +7,7 @@ export default function DocumentRequests({ requests }) {
 
     const handleStatusUpdate = (id, newStatus) => {
         if(confirm(`Are you sure you want to mark this request as ${newStatus}?`)) {
-            // Fixed the route name here to match web.php exactly
-            router.post(route('document-requests.update-status', { documentRequest: id }), {
+            router.post(route('secretary.document-requests.update-status', { documentRequest: id }), {
                 status: newStatus
             });
         }

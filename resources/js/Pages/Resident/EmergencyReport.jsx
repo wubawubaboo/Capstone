@@ -32,8 +32,8 @@ export default function EmergencyReport() {
     };
 
     const submit = (e) => {
-        e.preventDefault();
-        post('/resident/reports');
+    e.preventDefault();
+    post(route('resident.reports.store'));
     };
 
     return (

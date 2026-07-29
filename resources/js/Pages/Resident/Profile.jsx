@@ -5,9 +5,8 @@ import { Link } from '@inertiajs/react';
 export default function Profile() {
   return (
     <div className="-mt-4 -mx-4 pb-6">
-      {/* Profile Header Banner */}
       <div className="bg-blue-900 h-32 relative">
-         <Link href='/resident/logout' method="post" as="button" className="absolute top-4 right-4 text-white hover:opacity-80 transition" title="Logout">🚪</Link>
+         <Link href={route('resident.logout')} method="post" as="button" className="absolute top-4 right-4 text-white hover:opacity-80 transition" title="Logout">🚪</Link>
          <div className="absolute -bottom-6 left-6 flex items-end">
             <div className="w-16 h-16 bg-white rounded-full border-2 border-white overflow-hidden shadow-sm flex items-center justify-center text-2xl">👤</div>
             <div className="ml-3 mb-1">
@@ -17,15 +16,12 @@ export default function Profile() {
          </div>
       </div>
       
-      {/* Content Area */}
       <div className="mt-12 px-4">
-        {/* Tabs */}
         <div className="flex bg-gray-200 rounded-full p-1 mb-6">
           <button className="flex-1 bg-blue-900 text-white text-xs font-bold py-2 rounded-full transition-colors">Active</button>
           <button className="flex-1 text-gray-500 text-xs font-bold py-2 rounded-full transition-colors">History</button>
         </div>
         
-        {/* Status Cards Feed */}
         <div className="space-y-3">
           <StatusCard 
             type="EMERGENCY REQUEST" 

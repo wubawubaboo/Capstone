@@ -31,10 +31,9 @@ export default function BlotterManagement({ blotters }) {
                             placeholder="Search by name or case ID..."
                             className="text-sm border border-slate-300 rounded-md px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-slate-400"
                         />
-                        {/* Link to the Create Blotter page we just built */}
                         <Link 
-                            href='secretary/blotters.create'
-                            className="bg-[#0a2342] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition whitespace-nowrap"
+                            href={route('secretary.blotters.create')}
+                            className="bg-[#0a2342] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition whitespace-nowrap inline-block"
                         >
                             + New Blotter
                         </Link>
@@ -63,7 +62,6 @@ export default function BlotterManagement({ blotters }) {
                                         {row.report?.user?.full_name || 'Anonymous'}
                                     </td>
                                     <td className="py-3 px-4 font-medium text-amber-700">
-                                        {/* Checks for registered user first, falls back to manually typed name */}
                                         {row.receiver?.full_name || row.receiver_name || 'Unknown'}
                                     </td>
                                     <td className="py-3 px-4 text-slate-700">

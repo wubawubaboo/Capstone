@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BlotterController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,10 @@ Route::middleware('auth')->prefix('resident')->name('resident.')->group(function
         
         Route::post('/document-request', [DocumentRequestController::class, 'store'])->name('documents.store');
 
+        Route::get('/service-request', function () {
+            return Inertia::render('Resident/ServiceRequest');
+        })->name('services.create');
+
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])
             ->name('reports.attachment');
 
@@ -71,6 +76,7 @@ Route::middleware('auth')->prefix('resident')->name('resident.')->group(function
 });
 
 Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(function () {
+    
     Route::group(['middleware' => function ($request, $next) {
         if ($request->user()->role !== 'secretary') {
             abort(403, 'Unauthorized action.');
@@ -78,6 +84,25 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         return $next($request);
     }], function () {
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
+
+        Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests');
+        Route::post('/document-requests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])->name('document-requests.update-status');
+
+        Route::get('/blotter-management', [BlotterController::class, 'index'])->name('blotters');
+        Route::post('/blotters/{blotter}/schedule-mediation', [BlotterController::class, 'scheduleMediation'])->name('blotters.schedule-mediation');
+        Route::post('/blotters/{blotter}/vawc-detail', [BlotterController::class, 'storeVawcDetail'])->name('blotters.store-vawc');
+        Route::get('/blotters/create', [BlotterController::class, 'create'])->name('blotters.create'); // <--- ADD THIS
+        Route::post('/blotters', [BlotterController::class, 'store'])->name('blotters.store');
+        
+        Route::get('/case-history', [BlotterController::class, 'caseHistory'])->name('case-history');
+
+        Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
+        Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');
+
+        Route::get('/account-requests', [AuthController::class, 'accountRequests'])->name('account-requests');
+
+        // General Secretariat Action
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });
 

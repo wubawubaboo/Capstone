@@ -5,13 +5,11 @@ import { Link } from '@inertiajs/react';
 export default function MediationCalendar({ schedules = [] }) {
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    // Generate dynamic events based on the month and schedules passed from backend
     const events = useMemo(() => {
         const eventsMap = {};
         schedules.forEach(schedule => {
             if (schedule.scheduled_date) {
                 const dateObj = new Date(schedule.scheduled_date);
-                // Check if the schedule is in the currently viewed month
                 if (dateObj.getMonth() === currentDate.getMonth() && dateObj.getFullYear() === currentDate.getFullYear()) {
                     const day = dateObj.getDate();
                     const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -26,12 +24,11 @@ export default function MediationCalendar({ schedules = [] }) {
         return eventsMap;
     }, [schedules, currentDate]);
 
-    // Simple calendar logic to get days in the current month
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDayIndex = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
     const days = [];
-    for (let i = 0; i < firstDayIndex; i++) days.push(null); // padding for empty slots
+    for (let i = 0; i < firstDayIndex; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
     return (
@@ -54,7 +51,6 @@ export default function MediationCalendar({ schedules = [] }) {
                     </div>
                 </div>
 
-                {/* Calendar Grid */}
                 <div className="grid grid-cols-7 border-t border-l border-slate-200 text-xs">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(dayName => (
                         <div key={dayName} className="font-bold text-center py-2 border-r border-b border-slate-200 bg-slate-50 text-slate-600">

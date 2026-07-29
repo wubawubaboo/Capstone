@@ -113,16 +113,19 @@ class BlotterController extends Controller
         return back()->with('success', 'VAWC details attached securely.');
     }
 
-    public function caseHistory()
+    public function caseHistory(Request $request)
     {
-        $cases = BlotterRecord::with(['report', 'receiver'])
-            ->latest()
-            ->paginate(15);
+    // Grab the blotter ID passed via query string (?blotter=id)
+    $blotterId = $request->input('blotter');
 
-        return Inertia::render('Secretary/CaseHistory', [
-            'cases' => $cases
-        ]);
+    $blotter = BlotterRecord::with(['report.user', 'receiver', 'vawcDetail', 'mediations'])
+        ->findOrFail($blotterId);
+
+    return Inertia::render('Secretary/CaseHistory', [
+        'blotter' => $blotter
+    ]);
     }
+    
     public function mediationCalendar()
     {
         // 1. Query the MediationSchedule model directly since that's where the dates live
