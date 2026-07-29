@@ -11,13 +11,31 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
+    /**
+     * Helper method to redirect authenticated users based on their role.
+     */
+    private function redirectBasedOnRole()
+    {
+        return match (Auth::user()->role) {
+            'resident'  => redirect('/resident/home'),
+            'admin'     => redirect('/admin/analytics'),
+            'secretary' => redirect('/secretary/analytics'),
+            'vawc'      => redirect('/vawc/analytics'),
+            default     => redirect('/'),
+        };
+    }
+
     public function showLogin()
     {
+        if (Auth::check()) return $this->redirectBasedOnRole();
+        
         return Inertia::render('Auth/Login');
     }
 
     public function login(Request $request)
     {
+        if (Auth::check()) return $this->redirectBasedOnRole();
+
         $credentials = $request->validate([
             'phone_number' => ['required', 'string'],
             'password' => ['required'],
@@ -26,10 +44,13 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             $user = Auth::user();
+            
+            // If a staff member tries to use the resident login, log them out
             if ($user->role !== 'resident') {
                 Auth::logout();
+            } else {
+                return redirect('/resident/home');
             }
-            return redirect('/resident/home');
         }
 
         return back()->withErrors([
@@ -39,11 +60,15 @@ class AuthController extends Controller
 
     public function showStaffLogin()
     {
+        if (Auth::check()) return $this->redirectBasedOnRole();
+
         return Inertia::render('Auth/StaffLogin');
     }
 
     public function staffLogin(Request $request)
     {
+        if (Auth::check()) return $this->redirectBasedOnRole();
+
         $credentials = $request->validate([
             'phone_number' => ['required', 'string'],
             'password' => ['required'],
@@ -61,19 +86,25 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return match ($user->role) {
-                'admin'     => redirect('/admin/analytics'),
-                'secretary' => redirect('/secretary/analytics'),
-                'vawc'      => redirect('/vawc/analytics'),
-            };
+            return $this->redirectBasedOnRole();
         }
 
         return back()->withErrors(['phone_number' => 'Invalid staff credentials.']);
     }
 
+    public function showRegistration() 
+    {
+        if (Auth::check()) return $this->redirectBasedOnRole();
+
+        return Inertia::render('Auth/Registration', [
+            'barangays' => Barangay::all()
+        ]);
+    }
 
     public function register(Request $request)
     {
+        if (Auth::check()) return $this->redirectBasedOnRole();
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
@@ -94,18 +125,19 @@ class AuthController extends Controller
         return redirect('/resident/home');
     }
 
-    public function logout(Request $request)
+    public function showStaffRegistration() 
     {
-        Auth::logout();
-        
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if (Auth::check()) return $this->redirectBasedOnRole();
 
-        return redirect('/');
+        return Inertia::render('Auth/StaffRegistration', [
+            'barangays' => Barangay::all(),
+        ]);
     }
 
     public function staffRegister(Request $request)
     {
+        if (Auth::check()) return $this->redirectBasedOnRole();
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
@@ -123,22 +155,27 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
-        return match ($user->role) {
-            'admin'     => redirect('/admin/analytics'),
-            'secretary' => redirect('/secretary/analytics'),
-            'vawc'      => redirect('/vawc/analytics'),
-        };
+        return $this->redirectBasedOnRole();
     }
 
-    public function showRegistration() {
-        return Inertia::render('Auth/Registration', [
-            'barangays' => Barangay::all()
-        ]);
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
     }
 
-    public function showStaffRegistration() {
-        return Inertia::render('Auth/StaffRegistration', [
-            'barangays' => Barangay::all(),
+    public function accountRequests()
+    {
+        $requests = User::where('role', 'resident')
+            ->latest()
+            ->paginate(15);
+
+        return Inertia::render('Secretary/AccountRequests', [
+            'requests' => $requests
         ]);
     }
 }

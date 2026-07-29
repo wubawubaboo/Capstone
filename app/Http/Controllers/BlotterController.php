@@ -13,7 +13,7 @@ class BlotterController extends Controller
     public function index()
     {
         $blotters = BlotterRecord::with(['report', 'receiver'])->latest()->paginate(15);
-        return Inertia::render('blotters.index', compact('blotters'));
+        return Inertia::render('Secretary/BlotterManagement', compact('blotters')); 
     }
 
     public function scheduleMediation(Request $request, BlotterRecord $blotter)
@@ -42,5 +42,37 @@ class BlotterController extends Controller
         ]);
 
         return back()->with('success', 'VAWC details attached securely.');
+    }
+
+    public function caseHistory()
+    {
+        $cases = BlotterRecord::with(['report', 'receiver'])
+            ->latest()
+            ->paginate(15);
+
+        return Inertia::render('Secretary/CaseHistory', [
+            'cases' => $cases
+        ]);
+    }
+    public function mediationCalendar()
+    {
+        $scheduledMediations = BlotterRecord::with(['report', 'receiver'])
+            ->whereNotNull('scheduled_date')
+            ->orderBy('scheduled_date', 'asc')
+            ->get();
+
+        return Inertia::render('Secretary/MediationCalendar', [
+            'schedules' => $scheduledMediations
+        ]);
+    }
+
+    public function mediationMeetingDetails($id)
+    {
+        $blotter = BlotterRecord::with(['report', 'receiver', 'vawcDetail'])
+            ->findOrFail($id);
+
+        return Inertia::render('Secretary/MediationMeetingDetails', [
+            'blotter' => $blotter
+        ]);
     }
 }

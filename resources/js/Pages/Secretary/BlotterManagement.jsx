@@ -1,13 +1,19 @@
 import React from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 
-export default function BlotterManagement() {
-    const records = [
-        { id: '#BLT-062', complainant: 'Juan Dela Cruz', type: 'Noise', status: 'Scheduled', badgeColor: 'bg-amber-100 text-amber-800' },
-        { id: '#BLT-021', complainant: 'Paolo Reyes', type: 'Theft', status: 'Unscheduled', badgeColor: 'bg-slate-200 text-slate-700' },
-        { id: '#BLT-074', complainant: 'Cardo Dalisay', type: 'Assault', status: 'Escalated', badgeColor: 'bg-red-100 text-red-700' },
-    ];
+export default function BlotterManagement({ blotters }) {
+    // Fallback to empty array if data isn't loaded yet
+    const records = blotters?.data || [];
+
+    const getStatusColor = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'scheduled': return 'bg-amber-100 text-amber-800';
+            case 'escalated': return 'bg-red-100 text-red-700';
+            case 'resolved': return 'bg-emerald-100 text-emerald-800';
+            default: return 'bg-slate-200 text-slate-700'; // unscheduled/pending
+        }
+    };
 
     return (
         <SecretaryLayout>
@@ -45,26 +51,37 @@ export default function BlotterManagement() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {records.map((row) => (
+                            {records.length > 0 ? records.map((row) => (
                                 <tr key={row.id} className="hover:bg-slate-50 transition">
-                                    <td className="py-3 px-4 font-semibold text-slate-800">{row.id}</td>
-                                    <td className="py-3 px-4 text-slate-700">{row.complainant}</td>
-                                    <td className="py-3 px-4 text-slate-700">{row.type}</td>
+                                    <td className="py-3 px-4 font-semibold text-slate-800">
+                                        {row.case_number || `BLT-${row.id}`}
+                                    </td>
+                                    <td className="py-3 px-4 text-slate-700">
+                                        {row.report?.user?.full_name || 'Anonymous'}
+                                    </td>
+                                    <td className="py-3 px-4 text-slate-700">
+                                        {row.report?.incident_type || 'N/A'}
+                                    </td>
                                     <td className="py-3 px-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${row.badgeColor}`}>
-                                            {row.status}
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(row.status)}`}>
+                                            {row.status || 'Pending'}
                                         </span>
                                     </td>
                                     <td className="py-3 px-4">
+                                        {/* Assuming caseHistory uses the case ID */}
                                         <Link
-                                            href={`/secretary/blotter/${row.id.replace('#', '')}/history`}
+                                            href={route('secretary.case-history', { blotter: row.id })}
                                             className="bg-[#0a2342] text-white px-5 py-1.5 rounded text-xs font-medium hover:bg-slate-800 inline-block"
                                         >
                                             View
                                         </Link>
                                     </td>
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr>
+                                    <td colSpan="5" className="py-6 text-center text-slate-500">No blotter records found.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
