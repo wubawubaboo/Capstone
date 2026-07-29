@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Barangay;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,7 +45,7 @@ class AuthController extends Controller
     public function staffLogin(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'phone_number' => ['required', 'string'],
             'password' => ['required'],
         ]);
 
@@ -54,7 +55,7 @@ class AuthController extends Controller
             if ($user->role === 'resident') {
                 Auth::logout();
                 return back()->withErrors([
-                    'email' => 'Residents must use the public login page.',
+                    'phone_number' => 'Residents must use the public login page.',
                 ]);
             }
 
@@ -67,7 +68,7 @@ class AuthController extends Controller
             };
         }
 
-        return back()->withErrors(['email' => 'Invalid staff credentials.']);
+        return back()->withErrors(['phone_number' => 'Invalid staff credentials.']);
     }
 
 
@@ -127,5 +128,17 @@ class AuthController extends Controller
             'secretary' => redirect('/secretary/analytics'),
             'vawc'      => redirect('/vawc/analytics'),
         };
+    }
+
+    public function showRegistration() {
+        return Inertia::render('Auth/Registration', [
+            'barangays' => Barangay::all()
+        ]);
+    }
+
+    public function showStaffRegistration() {
+        return Inertia::render('Auth/StaffRegistration', [
+            'barangays' => Barangay::all(),
+        ]);
     }
 }
