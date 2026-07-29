@@ -41,15 +41,15 @@ class AnalyticsController extends Controller
 
         // 3. Blotter Status Distribution
         $blotterStatusData = collect([]);
-        // $blotterStatusData = BlotterRecord::select('status')
-        //     ->get()
-        //     ->groupBy('status')
-        //     ->map(function ($items, $status) {
-        //         return [
-        //             'name'  => ucfirst($status),
-        //             'value' => $items->count()
-        //         ];
-        //     })->values();
+        $blotterStatusData = BlotterRecord::select('status')
+             ->get()
+             ->groupBy('status')
+             ->map(function ($items, $status) {
+                 return [
+                     'name'  => ucfirst($status),
+                     'value' => $items->count()
+                 ];
+             })->values();
 
         return Inertia::render('Secretary/Analytics', [
             'auth' => [

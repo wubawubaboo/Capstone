@@ -39,13 +39,15 @@ class BlotterController extends Controller
     {
         $validated = $request->validate([
             'report_id'      => 'nullable|exists:reports,id',
-            'complainant_id' => 'required_without:report_id|exists:users,id',
-            'incident_type'  => 'required_without:report_id|string|max:255',
-            'description'    => 'required_without:report_id|string',
+            
+            'complainant_id' => 'nullable|required_without:report_id|exists:users,id',
+            'incident_type'  => 'nullable|required_without:report_id|string|max:255',
+            'description'    => 'nullable|required_without:report_id|string',
             
             'is_registered_respondent' => 'required|boolean',
-            'receiver_id'    => 'nullable|required_if:is_registered_respondent,true|exists:users,id',
-            'receiver_name'  => 'nullable|required_if:is_registered_respondent,false|string|max:255',
+            
+            'receiver_id'    => 'nullable|required_if:is_registered_respondent,true,1|exists:users,id',
+            'receiver_name'  => 'nullable|required_if:is_registered_respondent,false,0|string|max:255',
         ]);
 
         $barangayId = Auth::user()->barangay_id;

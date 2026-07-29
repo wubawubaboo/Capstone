@@ -38,14 +38,25 @@ export default function CreateBlotter({ pendingReports, residents }) {
                 <div className="flex gap-4 mb-6">
                     <button 
                         type="button" 
-                        onClick={() => { setEntryType('existing'); setData('complainant_id', ''); setData('incident_type', ''); setData('description', ''); }}
+                        onClick={() => { 
+                            setEntryType('existing'); 
+                            setData(prev => ({
+                                ...prev,
+                                complainant_id: '',
+                                incident_type: '',
+                                description: ''
+                            })); 
+                        }}
                         className={`px-4 py-2 rounded text-sm font-bold transition-colors ${entryType === 'existing' ? 'bg-[#0a2342] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
                         From Existing Report
                     </button>
                     <button 
                         type="button" 
-                        onClick={() => { setEntryType('walk-in'); setData('report_id', ''); }}
+                        onClick={() => { 
+                            setEntryType('walk-in'); 
+                            setData('report_id', ''); 
+                        }}
                         className={`px-4 py-2 rounded text-sm font-bold transition-colors ${entryType === 'walk-in' ? 'bg-[#0a2342] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
                         Walk-In Complaint
