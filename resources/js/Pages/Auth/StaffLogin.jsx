@@ -50,6 +50,12 @@ export default function StaffLogin() {
                     >
                         {processing ? 'Logging in...' : 'Log in'}
                     </button>
+
+                    <div className="mt-4 text-center">
+                        <Link href="/portal/secure-register" method='get' className="text-sm text-blue-500 hover:underline">
+                            Don't have an account? Register here.
+                        </Link>
+                    </div>
                 </form>
             </div>
     );

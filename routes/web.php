@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ReportController;
@@ -30,6 +31,9 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/portal/secure-login', [AuthController::class, 'showStaffLogin'])->name('login');
     Route::post('/portal/secure-login', [AuthController::class, 'staffLogin']);
+
+    Route::get('/portal/secure-register', [AuthController::class, 'showStaffRegistration'])->name('register');
+    Route::post('/portal/secure-register', [AuthController::class, 'staffRegister']);
 });
 
 Route::middleware('auth')->prefix('resident')->group(function () {
@@ -76,6 +80,7 @@ Route::middleware('auth')->prefix('secretary')->group(function () {
         }
         return $next($request);
     }], function () {
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
 
     });

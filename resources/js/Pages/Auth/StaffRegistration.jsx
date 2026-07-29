@@ -8,11 +8,12 @@ export default function Registration({barangays}) {
         password: '',
         password_confirmation: '',
         barangay_id: '',
+        role: '',
     });
 
     const submit = (e) => {
         e.preventDefault();
-        post('/register');
+        post('/portal/secure-register');
     };
 
     return (
@@ -69,23 +70,18 @@ export default function Registration({barangays}) {
                     </div>
                     
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">Roles</label>
+                        <label className="block text-gray-300">Staff Role</label>
                         <select
-                            value={data.barangay_id}
-                            onChange={(e) => setData('barangay_id', e.target.value)}
+                            value={data.role}
+                            onChange={e => setData('role', e.target.value)}
                             className="w-full px-3 py-2 border rounded-md bg-white"
-                            required
                         >
-                            <option value="" disabled>Select your barangay</option>
-                            
-                            {/* Dynamically render the barangays */}
-                            {barangays && barangays.map((barangay) => (
-                                <option key={barangay.id} value={barangay.id}>
-                                    {barangay.name}
-                                </option>
-                            ))}
+                            <option value="secretary">Secretary</option>
+                            <option value="vawc">VAWC Desk Officer</option>
+                            <option value="admin">Admin</option>
+
                         </select>
-                        {errors.barangay_id && <div className="text-red-500 text-sm mt-1">{errors.barangay_id}</div>}
+                        {errors.role && <div className="text-red-400 text-sm mt-1">{errors.role}</div>}
                     </div>
                     
                     <div className="mb-4">

@@ -7,8 +7,8 @@ export default function SecretaryLayout({ children }) {
     const navItems = [
         { label: 'Blotter Records', href: '/secretary/blotter' },
         { label: 'Mediation Calendar', href: '/secretary/mediation-calendar' },
-        { label: 'Account Requests (2)', href: '/secretary/account-requests' },
-        { label: 'Document Request (1)', href: '/secretary/document-requests' },
+        { label: 'Account Requests', href: '/secretary/account-requests' },
+        { label: 'Document Request', href: '/secretary/document-requests' },
         { label: 'Analytics', href: '/secretary/analytics' },
     ];
 
