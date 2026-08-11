@@ -94,7 +94,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::get('/blotters/create', [BlotterController::class, 'create'])->name('blotters.create');
         Route::post('/blotters', [BlotterController::class, 'store'])->name('blotters.store');
         
-        Route::get('/case-history', [BlotterController::class, 'caseHistory'])->name('case-history');
+        Route::get('/case-history/{id}', [BlotterController::class, 'caseHistory'])->name('case-history');
 
         Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');

@@ -129,13 +129,10 @@ class BlotterController extends Controller
         return back()->with('success', 'VAWC details attached securely.');
     }
 
-    public function caseHistory(Request $request)
+    public function caseHistory($id)
     {
-        // Grab the ID passed from Ziggy (?blotter=id)
-        $blotterId = $request->input('blotter');
-        
         $blotter = BlotterRecord::with(['report.user', 'receiver', 'vawcDetail', 'mediations'])
-            ->findOrFail($blotterId);
+            ->findOrFail($id);
 
         return Inertia::render('Secretary/CaseHistory', [
             'blotter' => $blotter

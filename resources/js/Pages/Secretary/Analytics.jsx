@@ -60,34 +60,31 @@ export default function Analytics({ auth, stats, documentTrends, blotterStatusDa
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h3 className="text-lg font-semibold text-gray-700 mb-6">Blotter Records by Status</h3>
-                            <div className="h-[300px] w-full flex justify-center items-center">
-                                {(blotterStatusData && blotterStatusData.length > 0) ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={blotterStatusData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={70}
-                                                outerRadius={100}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {blotterStatusData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <p className="text-gray-500 italic">No blotter records found.</p>
-                                )}
-                            </div>
+                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-6">Blotter Records by Status</h3>
+                        <div className="h-[300px] w-full flex justify-center items-center">
+                            {(blotterStatusData && blotterStatusData.length > 0) ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={blotterStatusData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} allowDecimals={false} />
+                                        <Tooltip 
+                                            cursor={{ fill: '#F3F4F6' }} 
+                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
+                                        />
+                                        <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={50}>
+                                            {blotterStatusData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <p className="text-gray-500 italic">No blotter records found.</p>
+                            )}
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>

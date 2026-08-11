@@ -16,8 +16,8 @@ class BlotterRecord extends Model
     public function report() { return $this->belongsTo(Report::class); }
     public function barangay() { return $this->belongsTo(Barangay::class); }
     public function receiver() { return $this->belongsTo(User::class, 'receiver_id'); }
-    public function vawcDetail() { return $this->hasOne(VawcDetail::class, 'blotter_id'); }
-    public function mediations() { return $this->hasMany(MediationSchedule::class, 'blotter_id'); }
+    public function vawcDetail() { return $this->hasOne(VawcDetail::class, 'blotter_record_id'); }
+    public function mediations() { return $this->hasMany(MediationSchedule::class, 'blotter_record_id'); }
     public function attachments() { return $this->hasMany(Attachment::class, 'blotter_id'); }
 
     // Utility

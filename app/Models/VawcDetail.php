@@ -12,7 +12,7 @@ class VawcDetail extends Model
 
     protected $guarded = [];
 
-    public function blotter() { return $this->belongsTo(BlotterRecord::class, 'blotter_id'); }
+    public function blotter() { return $this->belongsTo(BlotterRecord::class, 'blotter_record_id'); }
     public function officer() { return $this->belongsTo(User::class, 'officer_in_charge_id'); }
 
     public function isSettled()

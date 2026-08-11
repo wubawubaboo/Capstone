@@ -74,7 +74,7 @@ export default function BlotterManagement({ blotters }) {
                                     </td>
                                     <td className="py-3 px-4">
                                         <Link
-                                            href={route('secretary.case-history', { blotter: row.id })}
+                                            href={route('secretary.case-history', { id: row.id })}
                                             className="bg-[#0a2342] text-white px-5 py-1.5 rounded text-xs font-medium hover:bg-slate-800 inline-block"
                                         >
                                             View
