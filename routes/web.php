@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlotterController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ServiceRequestController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -66,6 +67,7 @@ Route::middleware('auth')->prefix('resident')->name('resident.')->group(function
         Route::get('/service-request', function () {
             return Inertia::render('Resident/ServiceRequest');
         })->name('services.create');
+        Route::post('/service-request', [ServiceRequestController::class, 'store'])->name('services.store');
 
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])
             ->name('reports.attachment');
@@ -87,6 +89,9 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
 
         Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests');
         Route::post('/document-requests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])->name('document-requests.update-status');
+        Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests');
+        Route::post('/service-requests/{serviceRequest}/assign', [ServiceRequestController::class, 'assignAsset'])->name('service-requests.assign');
+        Route::post('/service-requests/{serviceRequest}/complete', [ServiceRequestController::class, 'complete'])->name('service-requests.complete');
 
         Route::get('/blotter-management', [BlotterController::class, 'index'])->name('blotters');
         Route::post('/blotters/{blotter}/schedule-mediation', [BlotterController::class, 'scheduleMediation'])->name('blotters.schedule-mediation');

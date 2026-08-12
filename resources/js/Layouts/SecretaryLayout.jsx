@@ -11,6 +11,7 @@ export default function SecretaryLayout({ children }) {
         { label: 'Mediation Calendar', href: route('secretary.mediation-calendar'), name: 'secretary.mediation-calendar' },
         { label: 'Account Requests', href: route('secretary.account-requests'), name: 'secretary.account-requests' },
         { label: 'Document Request', href: route('secretary.document-requests'), name: 'secretary.document-requests' },
+        { label: 'Service Dispatch', href: route('secretary.service-requests'), name: 'secretary.service-requests' },
         { label: 'Analytics', href: route('secretary.analytics'), name: 'secretary.analytics' },
     ];
 

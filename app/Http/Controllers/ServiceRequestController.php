@@ -6,8 +6,24 @@ use App\Models\ServiceRequest;
 use App\Models\BarangayAsset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+
 class ServiceRequestController extends Controller
 {
+    // Added for Secretary View
+    public function index()
+    {
+        $serviceRequests = ServiceRequest::with(['requester', 'asset'])->latest()->paginate(15);
+        $availableAssets = BarangayAsset::where('is_available', true)
+                            ->where('barangay_id', Auth::user()->barangay_id)
+                            ->get();
+
+        return Inertia::render('Secretary/ServiceRequests', [
+            'serviceRequests' => $serviceRequests,
+            'availableAssets' => $availableAssets
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
