@@ -13,6 +13,14 @@ class BarangayAsset extends Model
     protected $guarded = [];
     protected $casts = ['is_available' => 'boolean'];
 
+    protected $fillable = [
+        'barangay_id',
+        'asset_name',
+        'asset_type',
+        'is_available',
+        'is_archived',
+    ];
+
     public function barangay() { return $this->belongsTo(Barangay::class); }
     public function serviceRequests() { return $this->hasMany(ServiceRequest::class, 'assigned_asset_id'); }
 

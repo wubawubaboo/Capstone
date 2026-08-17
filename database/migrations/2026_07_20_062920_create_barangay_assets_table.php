@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('asset_name');
             $table->string('asset_type');
             $table->boolean('is_available')->default(true);
+            $table->boolean('is_archived')->default(false);
             $table->timestamps();
         });
     }

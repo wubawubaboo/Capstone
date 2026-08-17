@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
 export default function SecretaryLayout({ children }) {
-    // FIX: url comes from usePage(), while auth comes from usePage().props
     const { url } = usePage();
     const { auth } = usePage().props;
 
@@ -12,6 +11,7 @@ export default function SecretaryLayout({ children }) {
         { label: 'Account Requests', href: route('secretary.account-requests'), name: 'secretary.account-requests' },
         { label: 'Document Request', href: route('secretary.document-requests'), name: 'secretary.document-requests' },
         { label: 'Service Dispatch', href: route('secretary.service-requests'), name: 'secretary.service-requests' },
+        { label: 'Asset Management', href: route('secretary.assets'), name: 'secretary.assets' },
         { label: 'Analytics', href: route('secretary.analytics'), name: 'secretary.analytics' },
     ];
 

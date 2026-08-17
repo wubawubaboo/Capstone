@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlotterController;
 use App\Http\Controllers\DocumentRequestController;
@@ -108,6 +109,11 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/account-requests/{user}/approve', [AuthController::class, 'approveAccount'])->name('account-requests.approve');
         Route::post('/account-requests/{user}/reject', [AuthController::class, 'rejectAccount'])->name('account-requests.reject');
         Route::get('/account-requests/{user}/id-photo', [AuthController::class, 'showIdPhoto'])->name('account-requests.id-photo');
+
+        Route::get('/assets', [AssetController::class, 'index'])->name('assets');
+        Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');
+        Route::patch('/assets/{asset}/toggle', [AssetController::class, 'toggleAvailability'])->name('assets.toggle');
+        Route::delete('/assets/{asset}/archive', [AssetController::class, 'archive'])->name('assets.archive');
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
