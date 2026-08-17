@@ -1,22 +1,16 @@
 import React from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
 export default function ServiceRequest() {
-    // Safely retrieve auth data globally from Inertia's page props
-    const { auth } = usePage().props;
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        // Use optional chaining to prevent crashes if user data isn't immediately available
-        barangay_id: auth?.user?.barangay_id || '',
         service_type: '',
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('resident.services.store'), {
-            onSuccess: () => reset('service_type'),
-        });
+        post(route('resident.services.store'));
     };
 
     return (
@@ -45,11 +39,7 @@ export default function ServiceRequest() {
                                 <option value="Rescue / Calamity Response">Rescue / Calamity Response</option>
                                 <option value="Other">Other</option>
                             </select>
-                            {errors.service_type && <p className="text-red-500 text-xs mt-1">{errors.service_type}</p>}
-                        </div>
-
-                        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded text-sm text-blue-800">
-                            <strong>Note:</strong> By submitting this request, the barangay will dispatch the appropriate asset to your registered address.
+                            {errors.barangay_id && <p className="text-red-500 text-xs mt-1">System Error: {errors.barangay_id}</p>}
                         </div>
 
                         <div className="flex justify-end pt-4">

@@ -10,7 +10,6 @@ use Inertia\Inertia;
 
 class ServiceRequestController extends Controller
 {
-    // Added for Secretary View
     public function index()
     {
         $serviceRequests = ServiceRequest::with(['requester', 'asset'])->latest()->paginate(15);
@@ -18,7 +17,7 @@ class ServiceRequestController extends Controller
                             ->where('barangay_id', Auth::user()->barangay_id)
                             ->get();
 
-        return Inertia::render('Secretary/ServiceRequests', [
+        return Inertia::render('Secretary/ServiceRequest', [
             'serviceRequests' => $serviceRequests,
             'availableAssets' => $availableAssets
         ]);
@@ -27,14 +26,17 @@ class ServiceRequestController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'barangay_id' => 'required|exists:barangays,id',
             'service_type' => 'required|string'
         ]);
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
-        $user->serviceRequests()->create($validated + ['status' => 'Pending']);
+        $user->serviceRequests()->create([
+            'barangay_id' => $user->barangay_id,
+            'service_type' => $validated['service_type'],
+            'status' => 'Pending'
+        ]);
 
         return back()->with('success', 'Service requested successfully. Awaiting dispatch.');
     }

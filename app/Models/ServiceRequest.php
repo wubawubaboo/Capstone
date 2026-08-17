@@ -7,10 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class ServiceRequest extends Model
 {
-    /** @use HasFactory<\Database\Factories\ServiceRequestFactory> */
     use HasFactory;
 
     protected $guarded = [];
+
+    protected $fillable = [
+        'requester_id',
+        'barangay_id',
+        'service_type',
+        'status',
+        'asset_id'
+    ];
 
     public function requester() { return $this->belongsTo(User::class, 'requester_id'); }
     public function barangay() { return $this->belongsTo(Barangay::class); }
@@ -21,20 +28,18 @@ class ServiceRequest extends Model
     public function scopeActive($query) { return $query->where('status', 'In Progress'); }
 
     // State Transitions
-    public function assignAsset(BarangayAsset $asset)
+    public function assignAsset($asset)
     {
         $this->update([
-            'assigned_asset_id' => $asset->id,
+            'asset_id' => $asset->id,
             'status' => 'In Progress'
         ]);
-        $asset->dispatch();
     }
 
     public function completeService()
     {
-        $this->update(['status' => 'Completed']);
-        if ($this->asset) {
-            $this->asset->returnToBase();
-        }
+        $this->update([
+            'status' => 'Completed'
+        ]);
     }
 }
