@@ -76,7 +76,6 @@ class BlotterController extends Controller
             $incidentType = $report->incident_type;
             $incidentDescription = $report->description;
         } else {
-            // Case 2: Walk-in complaint (no prior report required)
             $complainantId = $validated['complainant_id'];
             $user = User::find($complainantId);
             
@@ -85,10 +84,8 @@ class BlotterController extends Controller
             $incidentDescription = $validated['description'];
         }
 
-        // Generate a standard Case Number
         $caseNumber = 'BLT-' . date('Y') . '-' . str_pad(BlotterRecord::count() + 1, 4, '0', STR_PAD_LEFT);
 
-        // Create the Blotter Record with the new redundant safety fields
         $blotter = BlotterRecord::create([
             'barangay_id'          => $barangayId,
             'report_id'            => $reportId,
@@ -122,19 +119,6 @@ class BlotterController extends Controller
         return back()->with('success', 'Mediation scheduled successfully.');
     }
 
-    public function storeVawcDetail(Request $request, BlotterRecord $blotter)
-    {
-        $validated = $request->validate([
-            'confidential_notes' => 'required|string'
-        ]);
-
-        $blotter->vawcDetail()->create([
-            'officer_in_charge_id' => Auth::id(),
-            'confidential_notes' => $validated['confidential_notes']
-        ]);
-
-        return back()->with('success', 'VAWC details attached securely.');
-    }
 
     public function caseHistory($id)
     {
@@ -148,17 +132,15 @@ class BlotterController extends Controller
 
     public function mediationCalendar()
     {
-        $schedules = \App\Models\MediationSchedule::with(['blotter.report.user'])
-            ->whereNotNull('scheduled_date')
+        $barangayId = Auth::user()->barangay_id;
+
+        $schedules = \App\Models\MediationSchedule::whereHas('blotter', function ($query) use ($barangayId) {
+                $query->where('barangay_id', $barangayId)
+                      ->whereDoesntHave('vawcDetail');
+            })
+            ->with(['blotter.report.user', 'blotter.receiver'])
             ->orderBy('scheduled_date', 'asc')
-            ->get()
-            ->map(function ($mediation) {
-                return [
-                    'id' => $mediation->blotter_id,
-                    'scheduled_date' => $mediation->scheduled_date,
-                    'report' => $mediation->blotter ? $mediation->blotter->report : null,
-                ];
-            });
+            ->get();
 
         return Inertia::render('Secretary/MediationCalendar', [
             'schedules' => $schedules
