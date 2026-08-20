@@ -133,6 +133,7 @@ Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
         Route::post('/blotters', [VawcController::class, 'store'])->name('blotters.store');
         Route::get('/case-history/{id}', [VawcController::class, 'caseHistory'])->name('case-history');
         Route::get('/mediation-calendar', [VawcController::class, 'mediationCalendar'])->name('mediation-calendar');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });
 

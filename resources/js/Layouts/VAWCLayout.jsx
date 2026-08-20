@@ -7,7 +7,7 @@ export default function VAWCLayout({ children }) {
 
     const navItems = [
         { label: 'VAWC Blotters', href: route('vawc.blotters'), name: 'vawc.blotters' },
-        { label: 'Mediation & BPO', href: route('vawc.mediation-calendar'), name: 'vawc.mediation-calendar' },
+        { label: 'Mediation Calendar', href: route('vawc.mediation-calendar'), name: 'vawc.mediation-calendar' },
         { label: 'Analytics', href: route('vawc.analytics'), name: 'vawc.analytics' },
     ];
 
@@ -46,7 +46,7 @@ export default function VAWCLayout({ children }) {
                         <span>Officer in Charge</span>
                     </div>
                     <Link
-                        href={route('secretary.logout')}
+                        href={route('vawc.logout')}
                         method="post"
                         as="button"
                         className="w-full text-left px-4 py-2 text-xs text-rose-300 hover:text-rose-100 transition block"

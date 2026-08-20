@@ -29,8 +29,8 @@ export default function BlotterManagement({ blotters }) {
                             <th className="py-3 px-4">Case #</th>
                             <th className="py-3 px-4">Complainant / Victim</th>
                             <th className="py-3 px-4">Respondent</th>
-                            <th className="py-3 px-4">Violation Type</th>
-                            <th className="py-3 px-4">BPO Status</th>
+                            <th className="py-3 px-4">Incident Type</th>
+                            <th className="py-3 px-4">Status</th>
                             <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -38,23 +38,21 @@ export default function BlotterManagement({ blotters }) {
                         {records.length > 0 ? (
                             records.map((row) => (
                                 <tr key={row.id} className="hover:bg-rose-50/20 transition">
-                                    <td className="py-3 px-4 font-semibold text-slate-800">VAWC-{row.id}</td>
+                                    <td className="py-3 px-4 font-semibold text-slate-800">
+                                        {row.case_number || `VAWC-${row.id}`}
+                                    </td>
                                     <td className="py-3 px-4 text-slate-700 font-medium">
-                                        {row.report?.user?.full_name || 'Confidential'}
+                                        {row.report?.user?.full_name || row.complainant_name || 'Confidential'}
                                     </td>
                                     <td className="py-3 px-4 text-slate-700">
                                         {row.receiver?.full_name || row.receiver_name || 'N/A'}
                                     </td>
                                     <td className="py-3 px-4 text-slate-600">
-                                        {row.vawc_detail?.violation_type || 'General R.A. 9262'}
+                                        {row.incident_type || 'General VAWC'}
                                     </td>
                                     <td className="py-3 px-4">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                                            row.vawc_detail?.has_bpo 
-                                                ? 'bg-purple-100 text-purple-800' 
-                                                : 'bg-slate-100 text-slate-700'
-                                        }`}>
-                                            {row.vawc_detail?.has_bpo ? 'BPO Issued' : 'No BPO'}
+                                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                            {row.status || 'Pending'}
                                         </span>
                                     </td>
                                     <td className="py-3 px-4 text-right">
