@@ -7,6 +7,7 @@ use App\Http\Controllers\BlotterController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceRequestController;
+use App\Http\Controllers\VawcController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -126,7 +127,12 @@ Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
         }
         return $next($request);
     }], function () {
-        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/analytics', [VawcController::class, 'analytics'])->name('analytics');
+        Route::get('/blotter-management', [VawcController::class, 'index'])->name('blotters');
+        Route::get('/blotters/create', [VawcController::class, 'create'])->name('blotters.create');
+        Route::post('/blotters', [VawcController::class, 'store'])->name('blotters.store');
+        Route::get('/case-history/{id}', [VawcController::class, 'caseHistory'])->name('case-history');
+        Route::get('/mediation-calendar', [VawcController::class, 'mediationCalendar'])->name('mediation-calendar');
     });
 });
 
