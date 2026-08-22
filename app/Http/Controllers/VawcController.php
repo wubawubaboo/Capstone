@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\BlotterRecord;
 use App\Models\VawcDetail;
-use App\Models\Report;
 use App\Models\User;
 use App\Models\MediationSchedule;
 use App\Models\SystemLog;
@@ -162,5 +161,42 @@ class VawcController extends Controller
         return Inertia::render('VAWC/MediationCalendar', [
             'schedules' => $schedules,
         ]);
+    }
+
+    public function scheduleMediation(Request $request, $id)
+    {
+    $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+        ->whereHas('vawcDetail')
+        ->findOrFail($id);
+
+    $validated = $request->validate([
+        'scheduled_date' => 'required|date|after:now',
+        'status'         => 'nullable|string|max:50',
+    ]);
+
+    $meetingCount = MediationSchedule::where('blotter_record_id', $blotter->id)->count();
+
+    if ($meetingCount >= 3) {
+        return back()->withErrors(['error' => 'Maximum 3 mediation sessions reached for this case.']);
+    }
+
+    $schedule = MediationSchedule::create([
+        'blotter_record_id' => $blotter->id,
+        'meeting_number'    => $meetingCount + 1,
+        'scheduled_date'    => $validated['scheduled_date'],
+        'status'            => $validated['status'] ?? 'Scheduled',
+    ]);
+
+    $blotter->update(['status' => 'Under Mediation']);
+
+    SystemLog::logAction(
+        Auth::user()->barangay_id,
+        Auth::id(),
+        'CREATE',
+        'VAWC Mediation Schedule',
+        "Scheduled confidential Session #{$schedule->meeting_number} for case #{$blotter->case_number}."
+    );
+
+    return back()->with('success', "VAWC mediation session #{$schedule->meeting_number} scheduled successfully.");
     }
 }

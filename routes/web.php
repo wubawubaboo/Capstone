@@ -105,6 +105,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
 
         Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');
+        Route::post('/cases/{id}/schedule-mediation', [BlotterController::class, 'scheduleMediation'])->name('cases.schedule-mediation');
 
         Route::get('/account-requests', [AuthController::class, 'accountRequests'])->name('account-requests');
         Route::post('/account-requests/{user}/approve', [AuthController::class, 'approveAccount'])->name('account-requests.approve');
@@ -133,6 +134,7 @@ Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
         Route::post('/blotters', [VawcController::class, 'store'])->name('blotters.store');
         Route::get('/case-history/{id}', [VawcController::class, 'caseHistory'])->name('case-history');
         Route::get('/mediation-calendar', [VawcController::class, 'mediationCalendar'])->name('mediation-calendar');
+        Route::post('/cases/{id}/schedule-mediation', [VawcController::class, 'scheduleMediation'])->name('cases.schedule-mediation');
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });

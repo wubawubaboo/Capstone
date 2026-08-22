@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BlotterRecord;
+use App\Models\MediationSchedule;
 use App\Models\Report;
 use App\Models\SystemLog;
 use App\Models\User;
@@ -66,7 +67,6 @@ class BlotterController extends Controller
         $reportId = null;
 
         if (!empty($validated['report_id'])) {
-            // Case 1: Convert an existing incident report to a blotter
             $report = Report::with('user')->findOrFail($validated['report_id']);
             $report->update(['status' => 'Blottered']);
             
@@ -105,19 +105,42 @@ class BlotterController extends Controller
         return to_route('secretary.blotters')->with('success', 'Blotter record created successfully.');
     }
 
-    public function scheduleMediation(Request $request, BlotterRecord $blotter)
-    {
-        $validated = $request->validate([
-            'scheduled_date' => 'required|date|after:today',
-            'meeting_number' => 'required|integer|min:1'
-        ]);
+    public function scheduleMediation(Request $request, $id)
+{
+    $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+        ->whereDoesntHave('vawcDetail')
+        ->findOrFail($id);
 
-        $blotter->scheduleMediation($validated['scheduled_date'], $validated['meeting_number']);
+    $validated = $request->validate([
+        'scheduled_date' => 'required|date|after:now',
+        'status'         => 'nullable|string|max:50',
+    ]);
 
-        SystemLog::logAction($blotter->barangay_id, Auth::id(), 'SCHEDULE', 'Mediation', "Scheduled meeting #{$validated['meeting_number']} for Case #{$blotter->case_number}.");
+    $meetingCount = MediationSchedule::where('blotter_record_id', $blotter->id)->count();
 
-        return back()->with('success', 'Mediation scheduled successfully.');
+    if ($meetingCount >= 3) {
+        return back()->withErrors(['error' => 'Maximum 3 mediation sessions reached for this case.']);
     }
+
+    $schedule = MediationSchedule::create([
+        'blotter_record_id' => $blotter->id,
+        'meeting_number'    => $meetingCount + 1,
+        'scheduled_date'    => $validated['scheduled_date'],
+        'status'            => $validated['status'] ?? 'Scheduled',
+    ]);
+
+    $blotter->update(['status' => 'Under Mediation']);
+
+    SystemLog::logAction(
+        Auth::user()->barangay_id,
+        Auth::id(),
+        'CREATE',
+        'Mediation Schedule',
+        "Scheduled Session #{$schedule->meeting_number} for case #{$blotter->case_number}."
+    );
+
+    return back()->with('success', "Mediation session #{$schedule->meeting_number} scheduled successfully.");
+}
 
 
     public function caseHistory($id)
@@ -134,7 +157,7 @@ class BlotterController extends Controller
     {
         $barangayId = Auth::user()->barangay_id;
 
-        $schedules = \App\Models\MediationSchedule::whereHas('blotter', function ($query) use ($barangayId) {
+        $schedules = MediationSchedule::whereHas('blotter', function ($query) use ($barangayId) {
                 $query->where('barangay_id', $barangayId)
                       ->whereDoesntHave('vawcDetail');
             })

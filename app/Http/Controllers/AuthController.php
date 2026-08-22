@@ -215,7 +215,6 @@ class AuthController extends Controller
         return back()->with('success', 'Account rejected and removed.');
     }
 
-    // NEW METHOD: Securely serve the ID photo
     public function showIdPhoto(User $user)
     {
         // Double-check authorization
