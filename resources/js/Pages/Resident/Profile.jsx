@@ -2,11 +2,13 @@ import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
-export default function Profile({ caseUpdates = [] }) {
+export default function Profile({ profileUser, caseUpdates = [] }) {
     const { auth } = usePage().props;
-    const user = auth?.user;
+    const user = profileUser || auth?.user;
 
-    const phoneNumber = user?.phone_number || user?.contact_number || 'No contact number registered';
+    const fullName = user?.full_name || 'Resident';
+    const contactNumber = user?.phone_number || 'No contact number registered';
+    const barangayName = user?.barangay?.name || (user?.barangay_id ? `Barangay #${user.barangay_id}` : 'Assigned');
 
     const getStatusBadge = (status) => {
         switch (status?.toLowerCase()) {
@@ -31,10 +33,10 @@ export default function Profile({ caseUpdates = [] }) {
                 <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-6 flex justify-between items-center">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900">
-                            Hello, {user?.full_name || 'Resident'}
+                            Hello, {fullName}
                         </h2>
                         <p className="text-sm font-medium text-slate-600 mt-1">
-                            📱 {phoneNumber}
+                            📱 {contactNumber}
                         </p>
                     </div>
                     <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
@@ -103,14 +105,14 @@ export default function Profile({ caseUpdates = [] }) {
                         <div>
                             <label className="text-slate-400 font-semibold block mb-1">Full Name</label>
                             <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800">
-                                {user?.full_name || 'N/A'}
+                                {fullName}
                             </p>
                         </div>
 
                         <div>
                             <label className="text-slate-400 font-semibold block mb-1">Contact Number</label>
                             <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800">
-                                {phoneNumber}
+                                {contactNumber}
                             </p>
                         </div>
 
@@ -124,7 +126,7 @@ export default function Profile({ caseUpdates = [] }) {
                         <div>
                             <label className="text-slate-400 font-semibold block mb-1">Assigned Barangay</label>
                             <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800">
-                                {user?.barangay?.name || `Barangay #${user?.barangay_id || 'Assigned'}`}
+                                {barangayName}
                             </p>
                         </div>
                     </div>

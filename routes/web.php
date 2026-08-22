@@ -50,9 +50,7 @@ Route::middleware('auth')->prefix('resident')->name('resident.')->group(function
             return Inertia::render('Resident/Home');
         })->name('home');
 
-        Route::get('/profile', function () {
-            return Inertia::render('Resident/Profile');
-        })->name('profile');
+        Route::get('/profile', [ReportController::class, 'profile'])->name('profile');
 
         Route::get('/emergency-report', function () {
             return Inertia::render('Resident/EmergencyReport');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\MediationSchedule;
 use App\Models\Report;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -53,24 +54,26 @@ class ReportController extends Controller {
         return response()->file($filePath);
 }
     public function profile()
-    {
-    $userId = Auth::id();
-    $barangayId = Auth::user()->barangay_id;
+{
+    /** @var User $authUser */
+    $authUser = Auth::user();
 
-    // Securely retrieve mediation notices belonging strictly to the logged-in resident
-    $caseUpdates = MediationSchedule::whereHas('blotter', function ($query) use ($userId, $barangayId) {
-            $query->where('barangay_id', $barangayId)
-                  ->whereDoesntHave('vawcDetail') // Enforce R.A. 9262 confidentiality
-                  ->where(function ($sub) use ($userId) {
-                      $sub->where('complainant_id', $userId)
-                          ->orWhere('receiver_id', $userId)
-                          ->orWhereHas('report', function ($r) use ($userId) {
-                              $r->where('user_id', $userId);
+    // Fetch user with barangay relationship
+    $user = User::with('barangay')->findOrFail($authUser->id);
+
+    // Fetch mediation updates belonging to this resident (strictly non-VAWC)
+    $caseUpdates = MediationSchedule::whereHas('blotter', function ($query) use ($user) {
+            $query->where('barangay_id', $user->barangay_id)
+                  ->whereDoesntHave('vawcDetail')
+                  ->where(function ($sub) use ($user) {
+                      $sub->where('complainant_id', $user->id)
+                          ->orWhere('receiver_id', $user->id)
+                          ->orWhereHas('report', function ($r) use ($user) {
+                              $r->where('user_id', $user->id);
                           });
                   });
         })
         ->with(['blotter' => function ($query) {
-            // Minimize exposed attributes
             $query->select('id', 'case_number', 'incident_type', 'status');
         }])
         ->orderBy('scheduled_date', 'desc')
@@ -88,7 +91,8 @@ class ReportController extends Controller {
         });
 
     return Inertia::render('Resident/Profile', [
+        'profileUser' => $user,
         'caseUpdates' => $caseUpdates,
     ]);
-    }
+}
 }
