@@ -14,7 +14,7 @@ use Inertia\Inertia;
 class BlotterController extends Controller
 {
     public function index()
-{
+    {
     $blotters = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
         ->whereDoesntHave('vawcDetail') // Strict data isolation
         ->with(['report.user', 'receiver'])
@@ -24,7 +24,7 @@ class BlotterController extends Controller
     return Inertia::render('Secretary/BlotterManagement', [
         'blotters' => $blotters
     ]);
-}
+    }
 
     public function create()
     {

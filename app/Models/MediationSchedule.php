@@ -13,6 +13,15 @@ class MediationSchedule extends Model
     protected $guarded = [];
     protected $casts = ['scheduled_date' => 'datetime'];
 
+    protected $fillable = [
+    'blotter_record_id',
+    'meeting_number',
+    'scheduled_date',
+    'status',
+    'notes',
+    'summons_pdf_path',
+];
+
     public function blotter() { return $this->belongsTo(BlotterRecord::class, 'blotter_record_id'); }
 
     // Scopes
