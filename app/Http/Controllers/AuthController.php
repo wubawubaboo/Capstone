@@ -121,11 +121,13 @@ class AuthController extends Controller
             'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'barangay_id' => ['required', 'exists:barangays,id'],
-            'id_photo' => ['required', 'image', 'max:5120'], 
+            'id_photo' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:5120'], 
+            'selfie_id_photo' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
         ]);
 
-        // FIX: Store privately (defaults to storage/app/id_photos)
-        $path = $request->file('id_photo')->store('id_photos');
+        // Store both files privately (defaults to storage/app/...)
+        $idPath = $request->file('id_photo')->store('id_photos');
+        $selfiePath = $request->file('selfie_id_photo')->store('id_photos/selfies'); // Added this line
 
         User::create([
             'full_name' => $request->name,
@@ -133,7 +135,8 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'resident',
             'barangay_id' => $request->barangay_id,
-            'id_photo_path' => $path,
+            'id_photo_path' => $idPath,
+            'selfie_id_photo_path' => $selfiePath, // Map the path to the DB
             'is_verified' => false,
         ]);
 

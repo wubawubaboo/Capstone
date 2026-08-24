@@ -25,6 +25,7 @@ class User extends Authenticatable
         'role',
         'barangay_id',
         'id_photo_path',
+        'selfie_id_path',
         'is_verified',
     ];
 

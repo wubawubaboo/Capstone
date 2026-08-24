@@ -18,11 +18,9 @@ return new class extends Migration
             $table->string('password');
             $table->string('role')->default('resident');
             $table->foreignId('barangay_id')->nullable()->constrained()->nullOnDelete();
-            
-            // Add these two new columns:
             $table->string('id_photo_path')->nullable();
+            $table->string('selfie_id_path')->nullable();
             $table->boolean('is_verified')->default(false);
-            
             $table->rememberToken();
             $table->timestamps();
         });

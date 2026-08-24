@@ -9,11 +9,11 @@ export default function Registration({ barangays }) {
         password_confirmation: '',
         barangay_id: '',
         id_photo: null,
+        selfie_id_photo: null, 
     });
 
     const submit = (e) => {
         e.preventDefault();
-        // Inertia automatically converts this to multipart/form-data because id_photo is a file
         post(route('register'));
     };
 
@@ -63,17 +63,32 @@ export default function Registration({ barangays }) {
                         {errors.barangay_id && <div className="text-red-600 text-xs mt-1">{errors.barangay_id}</div>}
                     </div>
 
-                    {/* NEW ID PHOTO UPLOAD FIELD */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Valid ID Photo (Required for Verification)</label>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            Valid Government ID
+                        </label>
                         <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => setData('id_photo', e.target.files[0])}
-                            className="w-full border border-gray-300 rounded p-2.5 text-sm bg-white cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-900 hover:file:bg-blue-100"
+                            onChange={e => setData('id_photo', e.target.files[0])}
+                            className="w-full border p-2"
                             required
                         />
-                        {errors.id_photo && <div className="text-red-600 text-xs mt-1">{errors.id_photo}</div>}
+                        {errors.id_photo && <p className="text-red-500 text-xs mt-1">{errors.id_photo}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            Selfie holding your ID
+                        </label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={e => setData('selfie_id_photo', e.target.files[0])}
+                            className="w-full border p-2"
+                            required
+                        />
+                        {errors.selfie_id_photo && <p className="text-red-500 text-xs mt-1">{errors.selfie_id_photo}</p>}
                     </div>
 
                     <div>
