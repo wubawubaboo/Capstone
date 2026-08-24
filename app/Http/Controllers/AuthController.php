@@ -179,12 +179,17 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $role = Auth::user()->role ?? 'resident';
+
         Auth::logout();
-        
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return to_route('landing');
+        if (in_array($role, ['secretary', 'vawc', 'admin'])) {
+            return to_route('/portal/secure-login');
+        }
+
+        return to_route('/');
     }
 
     public function accountRequests()
@@ -217,7 +222,6 @@ class AuthController extends Controller
 
     public function showIdPhoto(User $user)
     {
-        // Double-check authorization
         if (Auth::user()->role !== 'secretary') {
             abort(403, 'Unauthorized access.');
         }

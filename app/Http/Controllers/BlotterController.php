@@ -106,7 +106,7 @@ class BlotterController extends Controller
     }
 
     public function scheduleMediation(Request $request, $id)
-{
+    {
     $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
         ->whereDoesntHave('vawcDetail')
         ->findOrFail($id);
@@ -140,7 +140,7 @@ class BlotterController extends Controller
     );
 
     return back()->with('success', "Mediation session #{$schedule->meeting_number} scheduled successfully.");
-}
+    }
 
 
     public function caseHistory($id)
