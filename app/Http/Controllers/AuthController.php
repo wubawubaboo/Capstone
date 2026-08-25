@@ -4,17 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Barangay;
 use App\Models\User;
+use App\Services\PhilSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class AuthController extends Controller
 {
+    protected $smsService;
     /**
      * Helper method to redirect authenticated users based on their role.
      */
+    
+    public function __construct(PhilSmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
     private function redirectBasedOnRole()
     {
         return match (Auth::user()->role) {
@@ -125,7 +132,6 @@ class AuthController extends Controller
             'selfie_id_photo' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
         ]);
 
-        // Store both files privately (defaults to storage/app/...)
         $idPath = $request->file('id_photo')->store('id_photos');
         $selfiePath = $request->file('selfie_id_photo')->store('id_photos/selfies'); // Added this line
 
@@ -136,7 +142,7 @@ class AuthController extends Controller
             'role' => 'resident',
             'barangay_id' => $request->barangay_id,
             'id_photo_path' => $idPath,
-            'selfie_id_photo_path' => $selfiePath, // Map the path to the DB
+            'selfie_id_photo_path' => $selfiePath,
             'is_verified' => false,
         ]);
 
@@ -208,19 +214,40 @@ class AuthController extends Controller
         ]);
     }
 
-    public function approveAccount(User $user)
+    public function approveAccount(User $user, PhilSmsService $smsService)
     {
+
         $user->update(['is_verified' => true]);
-        return back()->with('success', 'Account approved successfully.');
+
+        $message = "Your account has been approved. You may now log in to the portal and access our services.";
+        $smsService->sendSms($user->phone_number, $message);
+
+        return back()->with('success', 'Account approved successfully and SMS sent.');
     }
 
-    public function rejectAccount(User $user)
+    public function rejectAccount(Request $request, User $user, PhilSmsService $smsService)
     {
+        $validated = $request->validate([
+            'reason' => 'required|string|in:Blurry ID,Mismatched Information,Invalid ID,Expired ID',
+            'custom_message' => 'nullable|string|max:150'
+        ]);
+
+        $message = "Your account verification was declined. Reason: " . $validated['reason'] . ".";
+        
+        if (!empty($validated['custom_message'])) {
+            $message .= " " . $validated['custom_message'];
+        }
+        
+        $message .= " Please register again with valid information.";
+
+        $smsService->sendSms($user->phone_number, $message);
+
         if ($user->id_photo_path) {
             Storage::disk('public')->delete($user->id_photo_path);
         }
         $user->delete();
-        return back()->with('success', 'Account rejected and removed.');
+
+        return back()->with('success', 'Account rejected, removed, and SMS sent to the resident.');
     }
 
     public function showIdPhoto(User $user)
