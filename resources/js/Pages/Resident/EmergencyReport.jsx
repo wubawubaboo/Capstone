@@ -80,7 +80,6 @@ export default function EmergencyReport() {
                     </button>
                     <span className="text-sm text-gray-600 font-medium">{locationStatus}</span>
                 </div>
-                {/* 3. Added error displays for location if they fail backend validation */}
                 {errors.latitude && <div className="text-red-500 text-sm mt-1 font-medium">Location error: {errors.latitude}</div>}
 
                 <div>
@@ -90,7 +89,6 @@ export default function EmergencyReport() {
                         onChange={e => setData('attachment', e.target.files[0])}
                         className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
                     />
-                    {/* 4. Added error display for attachments (e.g. if file is over 2MB or not an image) */}
                     {errors.attachment && <div className="text-red-500 text-sm mt-1 font-medium">{errors.attachment}</div>}
                 </div>
 

@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\MediationSchedule;
 use App\Models\Report;
 use App\Models\User;
+use App\Services\OpenStreetMapService;
+use App\Services\PhilSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Events\SosTriggered;
 use Inertia\Inertia;
 
 class ReportController extends Controller {
@@ -58,10 +61,8 @@ class ReportController extends Controller {
     /** @var User $authUser */
     $authUser = Auth::user();
 
-    // Fetch user with barangay relationship
     $user = User::with('barangay')->findOrFail($authUser->id);
 
-    // Fetch mediation updates belonging to this resident (strictly non-VAWC)
     $caseUpdates = MediationSchedule::whereHas('blotter', function ($query) use ($user) {
             $query->where('barangay_id', $user->barangay_id)
                   ->whereDoesntHave('vawcDetail')
@@ -95,4 +96,41 @@ class ReportController extends Controller {
         'caseUpdates' => $caseUpdates,
     ]);
 }
+    public function storeEmergency(Request $request, PhilSmsService $smsService, OpenStreetMapService $geocodeService)
+    {
+        $validated = $request->validate([
+            'emergency_type' => 'required|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $locationData = $geocodeService->reverseGeocode($validated['latitude'], $validated['longitude']);
+        $address = $locationData ? $locationData['full_address'] : 'Unknown Location (Check GPS Map)';
+        
+        $isOutsideJurisdiction = false;
+        if ($locationData && isset($locationData['village'])) {
+            if (stripos($locationData['village'], 'San Nicolas') === false) {
+                $isOutsideJurisdiction = true;
+            }
+        }
+
+        $report = Report::create([
+            'user_id' => Auth::user()->id,
+            'type' => 'SOS_CRITICAL',
+            'gps_coordinates' => $validated['latitude'] . ',' . $validated['longitude'],
+            'location_details' => $address,
+            'status' => 'pending',
+        ]);
+
+        broadcast(new SosTriggered($report));
+
+        $message = "URGENT SOS - BRGY SAN NICOLAS: {$validated['emergency_type']} reported at {$address}.";
+        if ($isOutsideJurisdiction) {
+            $message .= " (WARNING: Potentially outside barangay boundaries).";
+        }
+        
+        $smsService->sendSms('09123456789', $message);
+
+        return back()->with('success', 'Emergency SOS triggered successfully.');
+    }
 }

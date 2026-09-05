@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DocumentRequest;
 use App\Models\SystemLog;
+use App\Services\PhilSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -34,14 +35,26 @@ class DocumentRequestController extends Controller
 
     public function updateStatus(Request $request, DocumentRequest $documentRequest)
     {
-        $validated = $request->validate(['status' => 'required|in:Paid,Ready,Claimed']);
+        $validated = $request->validate(['status' => 'required|in:Ready,Claimed']);
 
-        if ($validated['status'] === 'Paid') $documentRequest->markAsPaid();
         if ($validated['status'] === 'Ready') $documentRequest->markAsReady();
         if ($validated['status'] === 'Claimed') $documentRequest->claimDocument();
 
         SystemLog::logAction($documentRequest->barangay_id, Auth::id(), 'UPDATE', 'Documents', "Updated Doc Ref #{$documentRequest->reference_no} to {$validated['status']}.");
 
         return back()->with('success', 'Document status updated.');
+    }
+
+    public function markAsReady(DocumentRequest $documentRequest, PhilSmsService $smsService)
+    {
+        $documentRequest->update(['status' => 'ready_for_pickup']);
+
+        $documentName = $documentRequest->documentType->name;
+        $residentName = $documentRequest->user->full_name;
+        $message = "Brgy. San Nicolas: Hello {$residentName}, your requested {$documentName} is now READY FOR PICKUP at the barangay hall. Please bring a valid ID.";
+
+        $smsService->sendSms($documentRequest->user->phone_number, $message);
+
+        return back()->with('success', 'Document marked as ready and SMS sent to the resident.');
     }
 }

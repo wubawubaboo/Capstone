@@ -16,7 +16,7 @@ class BlotterController extends Controller
     public function index()
     {
     $blotters = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-        ->whereDoesntHave('vawcDetail') // Strict data isolation
+        ->whereDoesntHave('vawcDetail')
         ->with(['report.user', 'receiver'])
         ->latest()
         ->paginate(10);
