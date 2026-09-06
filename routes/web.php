@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
@@ -120,6 +121,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         }
         return $next($request);
     }], function () {
-        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+        Route::get('/accounts', [AdminController::class, 'accounts'])->name('accounts');
+        Route::post('/accounts', [AdminController::class, 'storeAccount'])->name('accounts.store');
+        Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('logs');
+        Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });

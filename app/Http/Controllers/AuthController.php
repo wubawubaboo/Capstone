@@ -14,9 +14,7 @@ use Inertia\Inertia;
 class AuthController extends Controller
 {
     protected $smsService;
-    /**
-     * Helper method to redirect authenticated users based on their role.
-     */
+
     
     public function __construct(PhilSmsService $smsService)
     {

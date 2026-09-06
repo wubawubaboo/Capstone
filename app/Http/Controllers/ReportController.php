@@ -104,6 +104,8 @@ class ReportController extends Controller {
             'longitude' => 'required|numeric',
         ]);
 
+        $user = Auth::user();
+        $barangay = $user->barangay->name ?? 'San Nicolas';
         $locationData = $geocodeService->reverseGeocode($validated['latitude'], $validated['longitude']);
         $address = $locationData ? $locationData['full_address'] : 'Unknown Location (Check GPS Map)';
         
@@ -124,7 +126,7 @@ class ReportController extends Controller {
 
         broadcast(new SosTriggered($report));
 
-        $message = "URGENT SOS - BRGY SAN NICOLAS: {$validated['emergency_type']} reported at {$address}.";
+        $message = "URGENT SOS - {$barangay}: {$validated['emergency_type']} reported at {$address}.";
         if ($isOutsideJurisdiction) {
             $message .= " (WARNING: Potentially outside barangay boundaries).";
         }

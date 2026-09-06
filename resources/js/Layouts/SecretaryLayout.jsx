@@ -96,7 +96,6 @@ export default function SecretaryLayout({ children }) {
                             onClick={acknowledgeAlert}
                             className="bg-red-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-red-700 w-full transition-colors"
                         >
-                            ACKNOWLEDGE & VIEW DASHBOARD
                         </button>
                     </div>
                 </div>
