@@ -26,20 +26,21 @@ class BlotterController extends Controller
     ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $barangayId = Auth::user()->barangay_id;
 
         $pendingReports = Report::with('user')
             ->whereDoesntHave('blotter')
-            ->where('status', 'Pending')
+            ->whereIn('status', ['Pending', 'pending', 'in_progress'])
             ->get();
 
         $residents = User::where('barangay_id', $barangayId)->get();
 
         return Inertia::render('Secretary/CreateBlotter', [
             'pendingReports' => $pendingReports,
-            'residents' => $residents
+            'residents' => $residents,
+            'selectedReportId' => $request->query('report_id', '') 
         ]);
     }
 

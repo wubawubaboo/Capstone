@@ -133,4 +133,27 @@ class ReportController extends Controller {
 
         return back()->with('success', 'Emergency SOS triggered successfully.');
     }
+
+    public function secretaryIndex()
+    {
+        $reports = Report::with('user')
+            ->orderByRaw("CASE WHEN type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('Secretary/Reports', [
+            'reports' => $reports
+        ]);
+    }
+
+    public function updateStatus(Request $request, Report $report)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,in_progress,completed'
+        ]);
+
+        $report->update(['status' => $validated['status']]);
+        
+        return back()->with('success', 'Report status updated successfully.');
+    }
 }

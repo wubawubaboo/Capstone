@@ -67,6 +67,8 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         return $next($request);
     }], function () {
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/', function () { return Inertia::render('Public/LandingPage'); })->name('landing');
+        Route::get('/hotlines', function () { return Inertia::render('Public/Hotlines'); })->name('hotlines');
         Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests');
         Route::post('/document-requests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])->name('document-requests.update-status');
         Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests');
