@@ -11,13 +11,11 @@ class SystemLog extends Model
     use HasFactory;
 
     protected $guarded = [];
-    // Ensure created_at cannot be modified once set
     public const UPDATED_AT = null;
 
     public function barangay() { return $this->belongsTo(Barangay::class); }
     public function actor() { return $this->belongsTo(User::class, 'actor_id'); }
 
-    // Static Utility for easy logging anywhere in the app
     public static function logAction($barangayId, $actorId, $actionType, $module, $description, $ip = null)
     {
         return self::create([

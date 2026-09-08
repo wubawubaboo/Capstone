@@ -15,8 +15,9 @@ class ServiceRequest extends Model
         'requester_id',
         'barangay_id',
         'service_type',
+        'description',
         'status',
-        'asset_id'
+        'assigned_asset_id'
     ];
 
     public function requester() { return $this->belongsTo(User::class, 'requester_id'); }

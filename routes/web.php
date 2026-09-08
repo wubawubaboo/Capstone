@@ -47,8 +47,10 @@ Route::middleware('auth')->prefix('resident')->name('resident.')->group(function
     }], function () {
         Route::get('/home', function () {return Inertia::render('Resident/Home');})->name('home');
         Route::get('/profile', [ReportController::class, 'profile'])->name('profile');
+        Route::get('/resident/tracking', [ReportController::class, 'tracking'])->name('tracking');
         Route::get('/emergency-report', function () {return Inertia::render('Resident/EmergencyReport');})->name('reports.create');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+        Route::post('/sos-trigger', [ReportController::class, 'storeEmergency'])->name('sos.trigger');
         Route::get('/document-request', function () {return Inertia::render('Resident/DocumentRequest');})->name('documents.create');
         Route::post('/document-request', [DocumentRequestController::class, 'store'])->name('documents.store');
         Route::get('/service-request', function () {return Inertia::render('Resident/ServiceRequest');})->name('services.create');
@@ -80,6 +82,8 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/blotters/{blotter}/vawc-detail', [BlotterController::class, 'storeVawcDetail'])->name('blotters.store-vawc');
         Route::get('/blotters/create', [BlotterController::class, 'create'])->name('blotters.create');
         Route::post('/blotters', [BlotterController::class, 'store'])->name('blotters.store');
+        Route::get('/reports', [ReportController::class, 'secretaryIndex'])->name('reports');
+        Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
         Route::get('/case-history/{id}', [BlotterController::class, 'caseHistory'])->name('case-history');
         Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');
@@ -88,11 +92,17 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/account-requests/{user}/approve', [AuthController::class, 'approveAccount'])->name('account-requests.approve');
         Route::post('/account-requests/{user}/reject', [AuthController::class, 'rejectAccount'])->name('account-requests.reject');
         Route::get('/account-requests/{user}/id-photo', [AuthController::class, 'showIdPhoto'])->name('account-requests.id-photo');
+        Route::get('/account-requests/{user}/selfie-photo', [AuthController::class, 'showSelfiePhoto'])->name('account-requests.selfie-photo');
+        Route::put('/resident-accounts/{user}', [AuthController::class, 'updateResident'])->name('resident.update');
+        Route::delete('/resident-accounts/{user}', [AuthController::class, 'destroyResident'])->name('resident.destroy');
         Route::get('/assets', [AssetController::class, 'index'])->name('assets');
         Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');
         Route::patch('/assets/{asset}/toggle', [AssetController::class, 'toggleAvailability'])->name('assets.toggle');
         Route::delete('/assets/{asset}/archive', [AssetController::class, 'archive'])->name('assets.archive');
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::post('/police-accounts', [AuthController::class, 'storePolice'])->name('police.store');
+        Route::put('/police-accounts/{user}', [AuthController::class, 'updatePolice'])->name('police.update');
+        Route::delete('/police-accounts/{user}', [AuthController::class, 'destroyPolice'])->name('police.destroy');
     });
 });
 

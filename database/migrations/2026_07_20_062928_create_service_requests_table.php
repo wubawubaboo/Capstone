@@ -17,7 +17,8 @@ return new class extends Migration
             $table->foreignId('barangay_id')->constrained()->cascadeOnDelete();
             $table->foreignId('assigned_asset_id')->nullable()->constrained('barangay_assets')->nullOnDelete();
             $table->string('service_type');
-            $table->string('status');
+            $table->text('description');
+            $table->string('status')->default('Pending');
             $table->timestamps();
         });
     }

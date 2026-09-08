@@ -13,12 +13,14 @@ export default function SecretaryLayout({ children }) {
         { label: 'Document Request', href: route('secretary.document-requests'), name: 'secretary.document-requests' },
         { label: 'Service Requests', href: route('secretary.service-requests'), name: 'secretary.service-requests' },
         { label: 'Asset Management', href: route('secretary.assets'), name: 'secretary.assets' },
+        { label: 'Incident Reports', href: route('secretary.reports'), name: 'secretary.reports' },
         { label: 'Analytics', href: route('secretary.analytics'), name: 'secretary.analytics' },
+
     ];
 
     useEffect(() => {
         window.Echo.channel('emergency-alerts')
-            .listen('SosTriggered', (e) => {
+            .listen('.SosTriggered', (e) => {
                 setSosAlert(e.report);
             });
 
@@ -87,10 +89,10 @@ export default function SecretaryLayout({ children }) {
                         <div className="text-6xl mb-4">🚨</div>
                         <h2 className="text-3xl font-black text-red-600 mb-2">CRITICAL SOS TRIGGERED</h2>
                         <p className="text-lg text-slate-800 font-bold mb-4">
-                            Location: {sosAlert.location_details}
+                            Details: {sosAlert.description}
                         </p>
                         <p className="text-sm text-slate-600 mb-8">
-                            The Barangay Police have been notified via SMS[cite: 2]. Please coordinate the response immediately.
+                            The Barangay Police have been notified via SMS. Please coordinate the response immediately.
                         </p>
                         <button 
                             onClick={acknowledgeAlert}

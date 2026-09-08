@@ -2,153 +2,79 @@ import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
-export default function Profile({ profileUser, caseUpdates = [] }) {
+export default function Profile({ profileUser }) {
+    // 1. Grab the explicitly passed user, fallback to global auth if needed
     const { auth } = usePage().props;
-    const user = profileUser || auth?.user;
+    const user = profileUser || auth?.user || {};
 
-    const fullName = user?.full_name || 'Resident';
-    const contactNumber = user?.phone_number || 'No contact number registered';
-    const barangayName = user?.barangay?.name || (user?.barangay_id ? `Barangay #${user.barangay_id}` : 'Assigned');
-
-    const getStatusBadge = (status) => {
-        switch (status?.toLowerCase()) {
-            case 'scheduled':
-                return 'bg-blue-50 text-blue-700 border-blue-200';
-            case 'completed':
-            case 'settled':
-                return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-            case 'escalated':
-                return 'bg-rose-50 text-rose-700 border-rose-200';
-            default:
-                return 'bg-amber-50 text-amber-700 border-amber-200';
-        }
-    };
+    // 2. Safe variable assignments
+    const displayName = user.full_name || 'Resident Account';
+    const userInitial = displayName.charAt(0).toUpperCase();
+    const barangayName = user.barangay?.name || 'Your Barangay';
+    
+    // Successfully reads from the database
+    const userPhone = user.phone_number || 'Not provided';
 
     return (
-        <ResidentLayout>
-            <Head title="My Account & Case Notices" />
-
-            <div className="max-w-4xl mx-auto py-8 space-y-6">
-                {/* Account Greeting Banner */}
-                <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-6 flex justify-between items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900">
-                            Hello, {fullName}
-                        </h2>
-                        <p className="text-sm font-medium text-slate-600 mt-1">
-                            📱 {contactNumber}
-                        </p>
-                    </div>
-                    <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
-                        Verified
-                    </span>
+        <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+            <Head title="My Profile" />
+            
+            <div className="max-w-3xl mx-auto w-full space-y-6">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-900">My Account</h2>
                 </div>
 
-                {/* Case & Mediation Notices */}
-                <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-6 space-y-4">
-                    <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <div>
-                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Case & Hearing Notices</h3>
-                            <p className="text-xs text-slate-500">Official updates on your registered blotter cases and mediation proceedings.</p>
+                {/* Profile Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+                    <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 border-b border-slate-100 pb-8">
+                        <div className="w-24 h-24 bg-[#0a2342] text-white rounded-full flex items-center justify-center text-4xl font-black shrink-0 shadow-inner">
+                            {userInitial}
                         </div>
-                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
-                            {caseUpdates.length} {caseUpdates.length === 1 ? 'Notice' : 'Notices'}
-                        </span>
-                    </div>
-
-                    {caseUpdates.length > 0 ? (
-                        <div className="space-y-3">
-                            {caseUpdates.map((notice) => (
-                                <div
-                                    key={notice.id}
-                                    className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3"
-                                >
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-slate-900">
-                                                Case #{notice.case_number}
-                                            </span>
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getStatusBadge(notice.status)}`}>
-                                                {notice.status}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-slate-600">
-                                            Hearing #{notice.meeting_number}: Scheduled for{' '}
-                                            <span className="font-semibold text-slate-800">
-                                                {new Date(notice.scheduled_date).toLocaleString([], {
-                                                    dateStyle: 'medium',
-                                                    timeStyle: 'short',
-                                                })}
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <span className="text-[11px] text-slate-500 font-medium shrink-0">
-                                        {notice.incident_type}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-6 bg-slate-50/50 rounded-lg border border-dashed border-slate-200">
-                            <p className="text-xs text-slate-500 italic">No scheduled hearings or active case notices.</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Account Details */}
-                <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-6 space-y-4">
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">
-                        Account Details
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                        <div>
-                            <label className="text-slate-400 font-semibold block mb-1">Full Name</label>
-                            <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800">
-                                {fullName}
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="text-slate-400 font-semibold block mb-1">Contact Number</label>
-                            <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800">
-                                {contactNumber}
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="text-slate-400 font-semibold block mb-1">Account Role</label>
-                            <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800 uppercase">
-                                {user?.role || 'Resident'}
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="text-slate-400 font-semibold block mb-1">Assigned Barangay</label>
-                            <p className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-semibold text-slate-800">
+                        <div className="flex-1">
+                            <h1 className="text-2xl md:text-3xl font-black text-slate-900">{displayName}</h1>
+                            <p className="text-slate-500 font-medium mt-1">
                                 {barangayName}
                             </p>
+                            <div className="mt-3">
+                                {user.is_verified ? (
+                                    <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">✓ VERIFIED RESIDENT</span>
+                                ) : (
+                                    <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">PENDING VERIFICATION</span>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Account Actions */}
-                <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-6 flex justify-between items-center">
-                    <div>
-                        <h4 className="text-xs font-bold text-slate-800">Account Session</h4>
-                        <p className="text-xs text-slate-500">Terminate your current authenticated session.</p>
+                    {/* Account Details */}
+                    <div className="py-8 space-y-6">
+                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">Contact Information</h3>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</label>
+                                <p className="text-slate-900 font-medium">{userPhone}</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <Link
-                        href={route('resident.logout')}
-                        method="post"
-                        as="button"
-                        className="bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold px-4 py-2 rounded-lg border border-rose-200 transition"
-                    >
-                        Sign Out
-                    </Link>
+                    {/* Actions */}
+                    <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
+                        <Link 
+                            href={route('resident.logout')} 
+                            method="post" 
+                            as="button"
+                            className="w-full sm:w-auto px-8 py-3 bg-red-50 text-red-600 border border-red-200 rounded-lg font-bold text-sm hover:bg-red-600 hover:text-white transition-colors active:scale-95 text-center"
+                        >
+                            Log Out
+                        </Link>
+                    </div>
                 </div>
+
             </div>
-        </ResidentLayout>
+        </div>
     );
 }
+
+Profile.layout = page => <ResidentLayout>{page}</ResidentLayout>;

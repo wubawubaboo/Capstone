@@ -21,7 +21,11 @@ class SosTriggered implements ShouldBroadcastNow
 
     public function broadcastOn()
     {
-        // Broadcasting on a public channel for all active admin sessions
         return new Channel('emergency-alerts');
+    }
+
+    public function broadcastAs()
+    {
+        return 'SosTriggered';
     }
 }

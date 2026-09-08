@@ -19,6 +19,9 @@ class PhilSmsService
 
     public function sendSms($recipient, $message)
     {
+        if (str_starts_with($recipient, '09')) {
+            $recipient = '63' . substr($recipient, 1);
+        }
         try {
             $response = Http::withToken($this->token)->post($this->baseUrl, [
                 'recipient' => $recipient,

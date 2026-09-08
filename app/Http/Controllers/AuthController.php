@@ -14,8 +14,7 @@ use Inertia\Inertia;
 class AuthController extends Controller
 {
     protected $smsService;
-
-    
+  
     public function __construct(PhilSmsService $smsService)
     {
         $this->smsService = $smsService;
@@ -23,10 +22,11 @@ class AuthController extends Controller
     private function redirectBasedOnRole()
     {
         return match (Auth::user()->role) {
-            'resident'  => to_route('resident.home'),
-            'admin'     => to_route('admin.analytics'),
-            'secretary' => to_route('secretary.analytics'),
-            'vawc'      => to_route('vawc.analytics'),
+            'resident'        => to_route('resident.home'),
+            'admin'           => to_route('admin.analytics'),
+            'secretary'       => to_route('secretary.analytics'),
+            'vawc'            => to_route('vawc.analytics'),
+            'barangay_police' => to_route('resident.home'),
             default     => to_route('landing'),
         };
     }
@@ -50,7 +50,6 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             
-            // Check verification status
             if ($user->role === 'resident' && !$user->is_verified) {
                 Auth::logout();
                 return back()->withErrors([
@@ -131,7 +130,7 @@ class AuthController extends Controller
         ]);
 
         $idPath = $request->file('id_photo')->store('id_photos');
-        $selfiePath = $request->file('selfie_id_photo')->store('id_photos/selfies'); // Added this line
+        $selfiePath = $request->file('selfie_id_photo')->store('id_photos/selfies');
 
         User::create([
             'full_name' => $request->name,
@@ -140,7 +139,7 @@ class AuthController extends Controller
             'role' => 'resident',
             'barangay_id' => $request->barangay_id,
             'id_photo_path' => $idPath,
-            'selfie_id_photo_path' => $selfiePath,
+            'selfie_id_path' => $selfiePath,
             'is_verified' => false,
         ]);
 
@@ -176,7 +175,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'barangay_id' => $request->barangay_id,
-            'is_verified' => true, // Staff accounts are auto-verified
+            'is_verified' => true,
         ]);
 
         Auth::login($user);
@@ -193,22 +192,37 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         if (in_array($role, ['secretary', 'vawc', 'admin'])) {
-            return to_route('/portal/secure-login');
+            return to_route('staff.login');
         }
 
-        return to_route('/');
+        return redirect('/');
     }
 
     public function accountRequests()
     {
-        $requests = User::where('role', 'resident')
+        $barangayId = Auth::user()->barangay_id;
+
+        $pendingResidents = User::where('role', 'resident')
+            ->where('barangay_id', $barangayId)
             ->where('is_verified', false)
-            ->with('barangay')
             ->latest()
-            ->paginate(15);
+            ->get(); 
+
+        $verifiedResidents = User::where('role', 'resident')
+            ->where('barangay_id', $barangayId)
+            ->where('is_verified', true)
+            ->latest()
+            ->get();
+
+        $policeAccounts = User::where('role', 'barangay_police')
+            ->where('barangay_id', $barangayId)
+            ->latest()
+            ->get();
 
         return Inertia::render('Secretary/AccountRequests', [
-            'requests' => $requests
+            'pendingResidents' => $pendingResidents,
+            'verifiedResidents' => $verifiedResidents,
+            'policeAccounts' => $policeAccounts
         ]);
     }
 
@@ -259,5 +273,75 @@ class AuthController extends Controller
         }
 
         return Storage::response($user->id_photo_path);
+    }
+    public function showSelfiePhoto(User $user)
+    {
+        if (Auth::user()->role !== 'secretary') {
+            abort(403, 'Unauthorized access.');
+        }
+
+        if (!$user->selfie_id_path || !Storage::exists($user->selfie_id_path)) {
+            abort(404, 'Selfie photo not found.');
+        }
+
+        return Storage::response($user->selfie_id_path);
+    }
+
+    public function storePolice(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        User::create([
+            'full_name' => $request->name,
+            'phone_number' => $request->phone_number,
+            'password' => Hash::make($request->password),
+            'role' => 'barangay_police',
+            'barangay_id' => Auth::user()->barangay_id,
+            'is_verified' => true, 
+            'is_active' => true,
+        ]);
+
+        return redirect()->back()->with('success', 'Barangay Police account created successfully.');
+    }
+
+    public function updatePolice(Request $request, User $user)
+    {
+        $request->validate([
+            'full_name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string', 'max:11', 'unique:users,phone_number,' . $user->id],
+        ]);
+
+        $user->update($request->only('full_name', 'phone_number'));
+        return redirect()->back()->with('success', 'Police account updated.');
+    }
+
+    public function destroyPolice(User $user)
+    {
+        $user->delete();
+        return redirect()->back()->with('success', 'Police account deleted.');
+    }
+
+    public function updateResident(Request $request, User $user)
+    {
+        $request->validate([
+            'full_name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string', 'max:11', 'unique:users,phone_number,' . $user->id],
+        ]);
+
+        $user->update($request->only('full_name', 'phone_number'));
+        return redirect()->back()->with('success', 'Resident account updated.');
+    }
+
+    public function destroyResident(User $user)
+    {
+        if ($user->id_photo_path) Storage::disk('public')->delete($user->id_photo_path);
+        if ($user->selfie_id_path) Storage::disk('public')->delete($user->selfie_id_path);
+        
+        $user->delete();
+        return redirect()->back()->with('success', 'Resident account deleted.');
     }
 }
