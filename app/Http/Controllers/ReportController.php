@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Events\SosTriggered;
 use Inertia\Inertia;
+use App\Jobs\SendEmergencySmsJob;
 
 class ReportController extends Controller {
     
@@ -71,7 +72,6 @@ class ReportController extends Controller {
         $authUser = Auth::user();
         $user = User::with('barangay')->findOrFail($authUser->id);
 
-        // Fetch Mediation Cases
         $caseUpdates = MediationSchedule::whereHas('blotter', function ($query) use ($user) {
                 $query->where('barangay_id', $user->barangay_id)
                       ->whereDoesntHave('vawcDetail')
@@ -100,7 +100,6 @@ class ReportController extends Controller {
                 ];
             });
 
-        // Fetch Tracking Data
         $reports = Report::where('user_id', $user->id)->latest()->get();
         $serviceRequests = \App\Models\ServiceRequest::where('requester_id', $user->id)->latest()->get();
         $documentRequests = \App\Models\DocumentRequest::with('documentType')->where('requester_id', $user->id)->latest()->get();
@@ -149,7 +148,12 @@ class ReportController extends Controller {
             $message .= " (WARNING: Potentially outside barangay boundaries).";
         }
         
-        // $smsService->sendSms('09123456789', $message);
+        $policeOfficers = User::where('role', 'barangay_police')
+            ->where('barangay_id', $user->barangay_id)
+            ->whereNotNull('phone_number')
+            ->get();
+
+        SendEmergencySmsJob::dispatch($policeOfficers, $message);
 
         return back()->with('success', 'Emergency SOS triggered successfully.');
     }

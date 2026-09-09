@@ -52,7 +52,7 @@ const ReportDetailsModal = ({ report, onClose }) => {
                             <div>
                                 <p className="text-xs font-bold text-slate-500 uppercase mb-1">Attached Evidence</p>
                                 <a 
-                                    href={route('resident.reports.attachment', report.id)} 
+                                    href={route('secretary.reports.attachment', report.id)} 
                                     target="_blank" 
                                     rel="noreferrer"
                                     className="inline-flex items-center gap-2 bg-slate-200 text-slate-700 px-4 py-2 rounded text-sm font-bold hover:bg-slate-300 transition"

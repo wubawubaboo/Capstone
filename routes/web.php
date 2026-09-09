@@ -84,6 +84,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/blotters', [BlotterController::class, 'store'])->name('blotters.store');
         Route::get('/reports', [ReportController::class, 'secretaryIndex'])->name('reports');
         Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
+        Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])->name('reports.attachment');
         Route::get('/case-history/{id}', [BlotterController::class, 'caseHistory'])->name('case-history');
         Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');

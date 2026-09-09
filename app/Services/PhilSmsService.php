@@ -9,7 +9,7 @@ class PhilSmsService
 {
     protected $token;
     protected $senderId;
-    protected $baseUrl = 'https://app.philsms.com/api/v3/sms/send';
+    protected $baseUrl = 'https://dashboard.philsms.com/api/v3/sms/send';
 
     public function __construct()
     {

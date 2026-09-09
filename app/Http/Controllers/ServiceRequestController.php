@@ -26,16 +26,19 @@ class ServiceRequestController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'service_type' => 'required|string'
+            'service_type' => 'required|string',
+            'description'  => 'required|string',
         ]);
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
         $user->serviceRequests()->create([
-            'barangay_id' => $user->barangay_id,
+            'requester_id' => $user->id,
+            'barangay_id'  => $user->barangay_id,
             'service_type' => $validated['service_type'],
-            'status' => 'Pending'
+            'description'  => $validated['description'],
+            'status'       => 'Pending',
         ]);
 
         return back()->with('success', 'Service requested successfully. Awaiting dispatch.');
