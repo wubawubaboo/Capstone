@@ -13,7 +13,6 @@ class DocumentRequest extends Model
 
 protected $guarded = [];
 
-    // Auto-generate reference number on creation
     protected static function booted()
     {
         static::creating(function ($request) {

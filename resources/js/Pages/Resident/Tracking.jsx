@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
-// Helper component to color-code statuses consistently
 const StatusBadge = ({ status }) => {
     const s = (status || 'pending').toLowerCase();
     let colors = 'bg-amber-100 text-amber-700'; // Default: Pending

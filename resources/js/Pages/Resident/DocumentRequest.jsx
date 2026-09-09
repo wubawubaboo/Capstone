@@ -1,24 +1,28 @@
 import React from 'react';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
-export default function DocumentRequest() {
+export default function DocumentRequest({ documentTypes = [] }) {
     const { auth } = usePage().props;
     const user = auth?.user || {};
 
-    const { data, setData, post, processing, errors } = useForm({
-        document_type_id: 1,
+    const { data, setData, post, processing, errors, reset } = useForm({
+        document_type_id: '',
         purpose: 'Scholarship',
         barangay_id: user.barangay_id || 1,
     });
 
     function handleSubmit(e) {
         e.preventDefault();
-        post(route('resident.documents.store'));
+        post(route('resident.documents.store'), {
+            onSuccess: () => reset(),
+        });
     }
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col p-4 md:p-8">
+            <Head title="Request Document" />
+            
             <div className="max-w-6xl mx-auto w-full flex flex-col lg:flex-row gap-6 lg:gap-12 items-start">
                 
                 {/* Left Panel: Navigation, Title & Guidelines */}
@@ -26,7 +30,7 @@ export default function DocumentRequest() {
                     
                     <div className="flex items-center justify-between lg:justify-start">
                         <Link
-                            href={route('resident.home')}
+                            href={route('resident.home')} // Assuming you have a resident.home route
                             className="text-sm font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm w-fit"
                         >
                             &larr; Back to Dashboard
@@ -48,7 +52,7 @@ export default function DocumentRequest() {
                         <ul className="text-sm text-blue-700 space-y-3 list-disc pl-4 marker:text-blue-400 font-medium">
                             <li>Standard processing time is usually <strong>1 to 2 business days</strong>.</li>
                             <li>Please bring a <strong>valid ID</strong> when claiming your requested document at the Barangay Hall.</li>
-                            <li>You will receive a notification on your dashboard once your document is ready.</li>
+                            <li>You will receive an automated SMS notification once your document is ready.</li>
                         </ul>
                     </div>
                 </div>
@@ -80,9 +84,15 @@ export default function DocumentRequest() {
                                     value={data.document_type_id}
                                     onChange={e => setData('document_type_id', e.target.value)}
                                     className="w-full border-slate-300 rounded-lg shadow-sm text-base p-3 focus:ring-[#0a2342] focus:border-[#0a2342] bg-white"
+                                    required
                                 >
-                                    <option value={1}>Barangay Indigency</option>
-                                    <option value={2}>Barangay Clearance</option>
+                                    <option value="" disabled>Select an available document...</option>
+                                    {/* Dynamically populated from the database */}
+                                    {documentTypes.map(doc => (
+                                        <option key={doc.id} value={doc.id}>
+                                            {doc.name} (Fee: ₱{doc.base_fee || '0.00'})
+                                        </option>
+                                    ))}
                                 </select>
                                 {errors.document_type_id && <div className="text-red-500 text-xs mt-1">{errors.document_type_id}</div>}
                             </div>
@@ -95,6 +105,7 @@ export default function DocumentRequest() {
                                     value={data.purpose}
                                     onChange={e => setData('purpose', e.target.value)}
                                     className="w-full border-slate-300 rounded-lg shadow-sm text-base p-3 focus:ring-[#0a2342] focus:border-[#0a2342] bg-white"
+                                    required
                                 >
                                     <option value="Scholarship">Scholarship / Education</option>
                                     <option value="Employment">Employment / Job Application</option>
@@ -125,4 +136,5 @@ export default function DocumentRequest() {
     );
 }
 
+// Persistent Layout wrapping
 DocumentRequest.layout = page => <ResidentLayout>{page}</ResidentLayout>;

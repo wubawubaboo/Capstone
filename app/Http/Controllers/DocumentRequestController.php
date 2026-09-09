@@ -17,20 +17,22 @@ class DocumentRequestController extends Controller
     return Inertia::render('Secretary/DocumentRequests', compact('requests'));
     }
 
-    public function store(Request $request)
+public function store(Request $request)
     {
         $validated = $request->validate([
             'document_type_id' => 'required|exists:document_types,id',
-            'purpose' => 'required|string',
-            'barangay_id' => 'required|exists:barangays,id'
+            'purpose' => 'required|string|max:500',
         ]);
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        
-        $docRequest = $user->documentRequests()->create($validated + ['status' => 'Pending']);
+        DocumentRequest::create([
+            'requester_id' => Auth::user()->id,
+            'barangay_id' => Auth::user()->barangay_id,
+            'document_type_id' => $validated['document_type_id'],
+            'purpose' => $validated['purpose'],
+            'status' => 'pending',
+        ]);
 
-        return back()->with('success', "Request submitted. Reference No: {$docRequest->reference_no}");
+        return back()->with('success', 'Document request submitted successfully. You will receive an SMS when it is ready.');
     }
 
     public function updateStatus(Request $request, DocumentRequest $documentRequest)

@@ -3,61 +3,79 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use App\Models\Report;
 use App\Models\DocumentRequest;
-use App\Models\BlotterRecord;
 use App\Models\ServiceRequest;
-use Carbon\Carbon;
+use App\Models\MediationSchedule;
 use Illuminate\Http\Request;
 
 class AnalyticsController extends Controller
 {
-    /**
-     * Display the analytics dashboard for the Secretary module.
-     */
     public function index(Request $request)
     {
-        // 1. Quick KPI Statistics
-        $stats = [
-            'document_requests' => DocumentRequest::count(),
-            'pending_documents' => DocumentRequest::where('status', 'pending')->count(),
-            'blotter_records'   => BlotterRecord::count(),
-            'service_requests'  => ServiceRequest::count(),
-        ];
+        // 1. Latest Incident (For the UI Card - Removed the SOS filter)
+        $latestReport = Report::whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->latest()
+            ->first();
 
-        // 2. Document Requests Trend (Last 6 Months)
-        $months = collect(range(5, 0))->map(function($i) {
-            return Carbon::now()->startOfMonth()->subMonths($i);
-        });
-
-        $docs = DocumentRequest::where('created_at', '>=', Carbon::now()->subMonths(6)->startOfMonth())->get();
-        
-        $documentTrends = $months->map(function ($month) use ($docs) {
-            $monthString = $month->format('M Y');
-            return [
-                'name'  => $monthString,
-                'total' => $docs->filter(fn($d) => $d->created_at->format('M Y') === $monthString)->count(),
+        $mapLocation = null;
+        if ($latestReport) {
+            $mapLocation = [
+                'incident_type' => $latestReport->incident_type,
+                'date' => $latestReport->created_at->format('M d, Y h:i A'),
+                'is_critical' => $latestReport->incident_type === 'SOS_CRITICAL' // Flag for UI styling
             ];
-        })->values();
+        }
 
-        // 3. Blotter Status Distribution
-        $blotterStatusData = collect([]);
-        $blotterStatusData = BlotterRecord::select('status')
-             ->get()
-             ->groupBy('status')
-             ->map(function ($items, $status) {
-                 return [
-                     'name'  => ucfirst($status),
-                     'value' => $items->count()
-                 ];
-             })->values();
+        // 2. Heatmap Data: Fetch all reports for the density layer
+        $heatmapData = Report::whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get()
+            ->map(function ($report) {
+                return [
+                    (float) $report->latitude,
+                    (float) $report->longitude,
+                    $report->incident_type === 'SOS_CRITICAL' ? 2 : 1 
+                ];
+            })->values();
+
+        // 3. Incident Categories 
+        $incidentTrends = Report::pluck('incident_type')
+            ->countBy()
+            ->map(function ($count, $type) {
+                return ['incident_type' => $type, 'count' => $count];
+            })->values();
+
+        // 4. Document Transactions
+        $documentVolumes = DocumentRequest::join('document_types', 'document_requests.document_type_id', '=', 'document_types.id')
+            ->pluck('document_types.name')
+            ->countBy()
+            ->map(function ($count, $name) {
+                return ['name' => $name, 'count' => $count];
+            })->values();
+
+        // 5. Asset & Service Dispatch
+        $serviceStats = ServiceRequest::pluck('service_type')
+            ->countBy()
+            ->map(function ($count, $type) {
+                return ['service_type' => $type, 'count' => $count];
+            })->values();
+
+        // 6. Mediation Tracking
+        $mediationStats = MediationSchedule::pluck('status')
+            ->countBy()
+            ->map(function ($count, $status) {
+                return ['status' => $status, 'count' => $count];
+            })->values();
 
         return Inertia::render('Secretary/Analytics', [
-            'auth' => [
-                'user' => $request->user(),
-            ],
-            'stats'             => $stats,
-            'documentTrends'    => $documentTrends,
-            'blotterStatusData' => $blotterStatusData
+            'mapLocation' => $mapLocation,
+            'heatmapData' => $heatmapData,
+            'incidentTrends' => $incidentTrends,
+            'documentVolumes' => $documentVolumes,
+            'serviceStats' => $serviceStats,
+            'mediationStats' => $mediationStats,
         ]);
     }
 }

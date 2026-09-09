@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import { Link, router } from '@inertiajs/react';
 
-// NEW: Report Details Modal Component
 const ReportDetailsModal = ({ report, onClose }) => {
     if (!report) return null;
 
