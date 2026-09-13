@@ -32,7 +32,7 @@ class ServiceRequest extends Model
     public function assignAsset($asset)
     {
         $this->update([
-            'asset_id' => $asset->id,
+            'assigned_asset_id' => $asset->id,
             'status' => 'In Progress'
         ]);
     }

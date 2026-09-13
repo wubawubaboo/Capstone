@@ -9,7 +9,6 @@ export default function AdminLayout({ children }) {
         { label: 'Analytics', href: route('admin.analytics'), name: 'admin.analytics' },
         { label: 'Accounts', href: route('admin.accounts'), name: 'admin.accounts' },
         { label: 'Audit Logs', href: route('admin.logs'), name: 'admin.logs' },
-        { label: 'Settings', href: route('admin.settings'), name: 'admin.settings' },
     ];
 
     return (

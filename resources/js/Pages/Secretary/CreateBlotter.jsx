@@ -42,7 +42,7 @@ export default function CreateBlotter({ pendingReports, residents }) {
                         </div>
                     </div>
                     {initialReportId && (
-                        <Link href={route('secretary.reports.index')} className="text-sm font-bold text-slate-500 hover:text-slate-800">
+                        <Link href={route('secretary.reports')} className="text-sm font-bold text-slate-500 hover:text-slate-800">
                             Back to Incident Queue
                         </Link>
                     )}

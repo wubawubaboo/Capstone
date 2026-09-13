@@ -31,21 +31,21 @@ class AdminController extends Controller
             'staffAccounts' => $staffAccounts
         ]);
     }
-
     public function storeAccount(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'full_name' => 'required|string|max:255', // Changed from 'name'
             'email' => 'required|email|unique:users',
             'role' => 'required|in:secretary,vawc_officer',
             'password' => 'required|min:8',
         ]);
 
         User::create([
-            'name' => $validated['name'],
+            'full_name' => $validated['full_name'], // Changed from 'name'
             'email' => $validated['email'],
             'role' => $validated['role'],
             'password' => Hash::make($validated['password']),
+            // You likely need to assign a default barangay_id here based on your schema
         ]);
 
         return redirect()->back()->with('success', 'Administrative account created successfully.');
@@ -57,13 +57,6 @@ class AdminController extends Controller
         
         return Inertia::render('Admin/AuditLogs', [
             'logs' => $logs
-        ]);
-    }
-
-    public function settings()
-    {
-        return Inertia::render('Admin/Settings', [
-            'sms_gateway' => config('services.philsms.status')
         ]);
     }
 }

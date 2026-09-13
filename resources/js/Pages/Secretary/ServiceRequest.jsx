@@ -2,9 +2,22 @@ import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 
-export default function ServiceRequests({ serviceRequests, availableAssets }) {
+export default function ServiceRequests({ serviceRequests, availableAssets, filters }) {
     const requests = serviceRequests?.data || [];
     const [selectedAsset, setSelectedAsset] = useState({});
+    
+    const [statusFilter, setStatusFilter] = useState(filters?.status || '');
+
+    const handleFilterChange = (e) => {
+        const selectedStatus = e.target.value;
+        setStatusFilter(selectedStatus);
+
+        router.get(
+            route(route().current()), 
+            { status: selectedStatus },
+            { preserveState: true, replace: true }
+        );
+    };
 
     const handleAssignAsset = (requestId) => {
         const assetId = selectedAsset[requestId];
@@ -37,10 +50,33 @@ export default function ServiceRequests({ serviceRequests, availableAssets }) {
         <SecretaryLayout>
             <Head title="Service Requests" />
             
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
-                <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Service & Dispatch Requests</h2>
-                    <p className="text-sm text-slate-500">Manage community requests and dispatch barangay assets.</p>
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 min-h-[500px]">
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-slate-900">Service & Dispatch Requests</h2>
+                        <p className="text-sm text-slate-500 mt-1">Manage community requests and dispatch barangay assets.</p>
+                    </div>
+
+                    {/* Styled Filter Dropdown */}
+                    <div className="relative">
+                        <select 
+                            value={statusFilter} 
+                            onChange={handleFilterChange}
+                            className="appearance-none bg-white border border-slate-200 text-slate-700 text-sm rounded-md pl-4 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        
+                        {/* Custom Chevron Icon */}
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -108,7 +144,7 @@ export default function ServiceRequests({ serviceRequests, availableAssets }) {
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan="6" className="py-6 text-center text-slate-500">No service requests found.</td>
+                                    <td colSpan="6" className="py-6 text-center text-slate-500">No service requests match this status.</td>
                                 </tr>
                             )}
                         </tbody>

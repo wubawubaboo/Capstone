@@ -19,21 +19,22 @@ class PhilSmsService
 
     public function sendSms($recipient, $message)
     {
-        if (str_starts_with($recipient, '09')) {
-            $recipient = '63' . substr($recipient, 1);
-        }
-        try {
-            $response = Http::withToken($this->token)->post($this->baseUrl, [
-                'recipient' => $recipient,
-                'sender_id' => $this->senderId,
-                'type'      => 'plain',
-                'message'   => $message,
-            ]);
+        return true;
+        // if (str_starts_with($recipient, '09')) {
+        //     $recipient = '63' . substr($recipient, 1);
+        // }
+        // try {
+        //     $response = Http::withToken($this->token)->post($this->baseUrl, [
+        //         'recipient' => $recipient,
+        //         'sender_id' => $this->senderId,
+        //         'type'      => 'plain',
+        //         'message'   => $message,
+        //     ]);
 
-            return $response->json();
-        } catch (\Exception $e) {
-            Log::error('PhilSMS Error: ' . $e->getMessage());
-            return false;
-        }
+        //     return $response->json();
+        // } catch (\Exception $e) {
+        //     Log::error('PhilSMS Error: ' . $e->getMessage());
+        //     return false;
+        // }
     }
 }

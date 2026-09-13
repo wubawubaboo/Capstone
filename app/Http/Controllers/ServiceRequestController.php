@@ -10,16 +10,24 @@ use Inertia\Inertia;
 
 class ServiceRequestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $serviceRequests = ServiceRequest::with(['requester', 'asset'])->latest()->paginate(15);
+        $query = ServiceRequest::with(['requester', 'asset']);
+
+        $query->when($request->input('status'), function ($q, $status) {
+            return $q->where('status', $status);
+        });
+
+        $serviceRequests = $query->latest()->paginate(15)->withQueryString();
+        
         $availableAssets = BarangayAsset::where('is_available', true)
                             ->where('barangay_id', Auth::user()->barangay_id)
                             ->get();
 
         return Inertia::render('Secretary/ServiceRequest', [
             'serviceRequests' => $serviceRequests,
-            'availableAssets' => $availableAssets
+            'availableAssets' => $availableAssets,
+            'filters' => $request->only('status')
         ]);
     }
 
@@ -56,14 +64,27 @@ class ServiceRequestController extends Controller
             return back()->withErrors(['asset_id' => 'This asset is currently deployed.']);
         }
 
-        $serviceRequest->assignAsset($asset);
+        $serviceRequest->update([
+            'assigned_asset_id' => $asset->id,
+            'status' => 'In Progress'
+        ]);
+
+        $asset->update(['is_available' => false]);
 
         return back()->with('success', "{$asset->asset_name} dispatched.");
     }
 
     public function complete(ServiceRequest $serviceRequest)
     {
-        $serviceRequest->completeService();
+        $serviceRequest->update(['status' => 'Completed']);
+
+        if ($serviceRequest->assigned_asset_id) {
+            $asset = BarangayAsset::find($serviceRequest->assigned_asset_id);
+            if ($asset) {
+                $asset->update(['is_available' => true]);
+            }
+        }
+
         return back()->with('success', 'Service marked as completed and asset returned.');
     }
 }

@@ -11,13 +11,24 @@ use Inertia\Inertia;
 
 class DocumentRequestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-    $requests = DocumentRequest::with(['requester', 'documentType'])->latest()->paginate(15);
-    return Inertia::render('Secretary/DocumentRequests', compact('requests'));
+        $query = DocumentRequest::with(['requester', 'documentType']);
+
+        $query->when($request->input('status'), function ($q, $status) {
+            return $q->where('status', $status);
+        });
+
+        // Append query string to persist filters across pagination pages
+        $requests = $query->latest()->paginate(15)->withQueryString();
+
+        return Inertia::render('Secretary/DocumentRequests', [
+            'requests' => $requests,
+            'filters' => $request->only('status'),
+        ]);
     }
 
-public function store(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'document_type_id' => 'required|exists:document_types,id',
@@ -53,7 +64,8 @@ public function store(Request $request)
 
         $documentName = $documentRequest->documentType->name;
         $residentName = $documentRequest->user->full_name;
-        $message = "Brgy. San Nicolas: Hello {$residentName}, your requested {$documentName} is now READY FOR PICKUP at the barangay hall. Please bring a valid ID.";
+        $barangayName = $documentRequest->barangay;
+        $message = "Brgy. {$barangayName}: Hello {$residentName}, your requested {$documentName} is now READY FOR PICKUP at the barangay hall. Please bring a valid ID.";
 
         $smsService->sendSms($documentRequest->user->phone_number, $message);
 

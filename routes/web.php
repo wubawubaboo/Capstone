@@ -82,6 +82,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/blotters/{blotter}/vawc-detail', [BlotterController::class, 'storeVawcDetail'])->name('blotters.store-vawc');
         Route::get('/blotters/create', [BlotterController::class, 'create'])->name('blotters.create');
         Route::post('/blotters', [BlotterController::class, 'store'])->name('blotters.store');
+        Route::post('/secretary/blotters/{id}/resolve', [BlotterController::class, 'resolveCase'])->name('secretary.blotters.resolve');
         Route::get('/reports', [ReportController::class, 'secretaryIndex'])->name('reports');
         Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])->name('reports.attachment');
@@ -136,7 +137,6 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/accounts', [AdminController::class, 'accounts'])->name('accounts');
         Route::post('/accounts', [AdminController::class, 'storeAccount'])->name('accounts.store');
         Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('logs');
-        Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });

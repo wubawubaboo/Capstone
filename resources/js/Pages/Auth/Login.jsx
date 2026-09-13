@@ -65,11 +65,6 @@ export default function Login() {
                             Register here
                         </Link>
                     </p>
-                    <p>
-                        <Link href={route('staff.login')} className="text-red-700 font-bold hover:underline">
-                            Staff Portal Login
-                        </Link>
-                    </p>
                 </div>
             </div>
         </div>

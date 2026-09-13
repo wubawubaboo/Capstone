@@ -47,23 +47,9 @@ export default function StaffLogin() {
                         disabled={processing}
                         className="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2.5 rounded transition text-sm"
                     >
-                        Secure Login
+                        Login
                     </button>
                 </form>
-
-                <div className="mt-6 text-center space-y-2 text-xs">
-                    <p className="text-slate-400">
-                        Need staff registration?{' '}
-                        <Link href={route('staff.register')} className="text-blue-400 font-bold hover:underline">
-                            Register here
-                        </Link>
-                    </p>
-                    <p>
-                        <Link href={route('login')} className="text-slate-300 hover:underline">
-                            &larr; Back to Resident Login
-                        </Link>
-                    </p>
-                </div>
             </div>
         </div>
     );

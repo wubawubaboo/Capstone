@@ -103,9 +103,24 @@ const ReportDetailsModal = ({ report, onClose }) => {
     );
 };
 
-export default function Reports({ reports }) {
+export default function Reports({ reports, filters }) {
     const data = reports?.data || [];
     const [selectedReport, setSelectedReport] = useState(null);
+    
+    // Initialize state with the prop passed from the backend
+    const [statusFilter, setStatusFilter] = useState(filters?.status || '');
+
+    const handleFilterChange = (e) => {
+        const selectedStatus = e.target.value;
+        setStatusFilter(selectedStatus);
+
+        // Send a GET request with the new filter parameter, preserving current page state
+        router.get(
+            route(route().current()), 
+            { status: selectedStatus },
+            { preserveState: true, replace: true }
+        );
+    };
 
     const handleStatusChange = (reportId, newStatus) => {
         router.put(route('secretary.reports.update-status', reportId), {
@@ -115,8 +130,31 @@ export default function Reports({ reports }) {
 
     return (
         <SecretaryLayout>
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h2 className="text-xl font-bold text-slate-900 mb-6">Incident & Emergency Queue</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 min-h-[500px]">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-slate-900">Incident & Emergency Queue</h2>
+                    
+                    {/* Styled Filter Dropdown */}
+                    <div className="relative">
+                        <select 
+                            value={statusFilter} 
+                            onChange={handleFilterChange}
+                            className="appearance-none bg-white border border-slate-200 text-slate-700 text-sm rounded-md pl-4 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        
+                        {/* Custom Chevron Icon */}
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
@@ -166,7 +204,6 @@ export default function Reports({ reports }) {
                                         </td>
                                         <td className="py-4 px-2 text-center">
                                             <div className="flex justify-center gap-2">
-                                                {/* NEW: View Details Button */}
                                                 <button 
                                                     onClick={() => setSelectedReport(report)}
                                                     className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700 transition"
@@ -186,7 +223,7 @@ export default function Reports({ reports }) {
                                 );
                             }) : (
                                 <tr>
-                                    <td colSpan="5" className="py-6 text-center text-slate-500">No active reports.</td>
+                                    <td colSpan="5" className="py-6 text-center text-slate-500">No reports match this status.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -194,7 +231,6 @@ export default function Reports({ reports }) {
                 </div>
             </div>
 
-            {/* Mount the Modal outside the table */}
             <ReportDetailsModal 
                 report={selectedReport} 
                 onClose={() => setSelectedReport(null)} 

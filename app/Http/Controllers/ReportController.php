@@ -158,15 +158,24 @@ class ReportController extends Controller {
         return back()->with('success', 'Emergency SOS triggered successfully.');
     }
 
-    public function secretaryIndex()
+    public function secretaryIndex(Request $request)
     {
-        $reports = Report::with('user')
-            ->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
+        $query = Report::with('user');
+
+        // Apply status filter if present
+        $query->when($request->input('status'), function ($q, $status) {
+            return $q->where('status', $status);
+        });
+
+        // Retain SOS Critical priority sorting, then paginate
+        $reports = $query->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
         return Inertia::render('Secretary/Reports', [
-            'reports' => $reports
+            'reports' => $reports,
+            'filters' => $request->only('status')
         ]);
     }
 
