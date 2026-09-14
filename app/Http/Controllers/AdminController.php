@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\SystemLog;
 use App\Models\Report;
 use App\Models\DocumentRequest;
+use App\Models\Barangay; // Added Barangay model
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -25,27 +26,32 @@ class AdminController extends Controller
 
     public function accounts()
     {
-        $staffAccounts = User::whereIn('role', ['secretary', 'vawc_officer'])->get();
+        $staffAccounts = User::with('barangay')->whereIn('role', ['secretary', 'vawc_officer'])->get();
+        $barangays = Barangay::orderBy('name')->get(); 
         
         return Inertia::render('Admin/AccountManagement', [
-            'staffAccounts' => $staffAccounts
+            'staffAccounts' => $staffAccounts,
+            'barangays' => $barangays
         ]);
     }
+
     public function storeAccount(Request $request)
     {
         $validated = $request->validate([
-            'full_name' => 'required|string|max:255', // Changed from 'name'
-            'email' => 'required|email|unique:users',
+            'full_name' => 'required|string|max:255',
+            'phone_number' => 'required|string|unique:users,phone_number',
+            'barangay_id' => 'required|exists:barangays,id',
             'role' => 'required|in:secretary,vawc_officer',
             'password' => 'required|min:8',
         ]);
 
         User::create([
-            'full_name' => $validated['full_name'], // Changed from 'name'
-            'email' => $validated['email'],
+            'full_name' => $validated['full_name'],
+            'phone_number' => $validated['phone_number'],
+            'barangay_id' => $validated['barangay_id'],
             'role' => $validated['role'],
             'password' => Hash::make($validated['password']),
-            // You likely need to assign a default barangay_id here based on your schema
+            'is_verified' => true,
         ]);
 
         return redirect()->back()->with('success', 'Administrative account created successfully.');

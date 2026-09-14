@@ -2,10 +2,11 @@ import React from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function AccountManagement({ staffAccounts }) {
+export default function AccountManagement({ staffAccounts, barangays }) {
     const { data, setData, post, reset, processing, errors } = useForm({
         full_name: '',
-        email: '',
+        phone_number: '',
+        barangay_id: '',
         role: 'secretary',
         password: '',
     });
@@ -37,15 +38,34 @@ export default function AccountManagement({ staffAccounts }) {
                         </div>
                         
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
                             <input 
-                                type="email" 
+                                type="text" 
                                 className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-colors" 
-                                value={data.email} 
-                                onChange={e => setData('email', e.target.value)} 
+                                value={data.phone_number} 
+                                onChange={e => setData('phone_number', e.target.value)} 
+                                placeholder="09xxxxxxxxx"
                                 required 
                             />
-                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                            {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Barangay</label>
+                            <select 
+                                className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-colors bg-white" 
+                                value={data.barangay_id} 
+                                onChange={e => setData('barangay_id', e.target.value)}
+                                required
+                            >
+                                <option value="" disabled>Select a Barangay</option>
+                                {barangays && barangays.map((barangay) => (
+                                    <option key={barangay.id} value={barangay.id}>
+                                        {barangay.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.barangay_id && <p className="text-red-500 text-xs mt-1">{errors.barangay_id}</p>}
                         </div>
                         
                         <div>
@@ -54,6 +74,7 @@ export default function AccountManagement({ staffAccounts }) {
                                 className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-colors bg-white" 
                                 value={data.role} 
                                 onChange={e => setData('role', e.target.value)}
+                                required
                             >
                                 <option value="secretary">Barangay Secretary</option>
                                 <option value="vawc_officer">VAWC Officer</option>
@@ -92,7 +113,8 @@ export default function AccountManagement({ staffAccounts }) {
                         <thead className="border-b border-slate-200 bg-slate-50">
                             <tr>
                                 <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Name</th>
-                                <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Email</th>
+                                <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Phone Number</th>
+                                <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Barangay</th>
                                 <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Role</th>
                             </tr>
                         </thead>
@@ -104,7 +126,10 @@ export default function AccountManagement({ staffAccounts }) {
                                             {account.full_name}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                            {account.email}
+                                            {account.phone_number}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                                            {account.barangay?.name || 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-slate-600 capitalize">
                                             {account.role.replace('_', ' ')}
@@ -113,7 +138,7 @@ export default function AccountManagement({ staffAccounts }) {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="3" className="px-6 py-8 text-center text-slate-500">
+                                    <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
                                         No active staff accounts found.
                                     </td>
                                 </tr>

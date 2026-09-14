@@ -50,6 +50,14 @@ export default function StaffLogin() {
                         Login
                     </button>
                 </form>
+                <div className="mt-6 text-center text-xs">
+                    <p className="text-slate-400">
+                        Register Staff Account{' '}
+                        <Link href={route('staff.register')} className="text-blue-400 font-bold hover:underline">
+                            Register
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     );
