@@ -82,7 +82,8 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/blotters/{blotter}/vawc-detail', [BlotterController::class, 'storeVawcDetail'])->name('blotters.store-vawc');
         Route::get('/blotters/create', [BlotterController::class, 'create'])->name('blotters.create');
         Route::post('/blotters', [BlotterController::class, 'store'])->name('blotters.store');
-        Route::post('/secretary/blotters/{id}/resolve', [BlotterController::class, 'resolveCase'])->name('secretary.blotters.resolve');
+        Route::post('/cases/{id}/resolve', [BlotterController::class, 'resolveCase'])->name('cases.resolve');
+        Route::post('/cases/{id}/escalate', [BlotterController::class, 'escalateCase'])->name('cases.escalate');
         Route::get('/reports', [ReportController::class, 'secretaryIndex'])->name('reports');
         Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])->name('reports.attachment');

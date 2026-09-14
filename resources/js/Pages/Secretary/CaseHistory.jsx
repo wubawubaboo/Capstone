@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react'; // Added router
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 
 export default function CaseHistory({ blotter }) {
@@ -23,6 +23,20 @@ export default function CaseHistory({ blotter }) {
             },
         });
     };
+
+    // --- Added Handlers ---
+    const handleResolve = () => {
+        if (confirm('Are you sure you want to mark this case as resolved?')) {
+            router.post(route('secretary.cases.resolve', blotter.id));
+        }
+    };
+
+    const handleEscalate = () => {
+        if (confirm('Are you sure you want to escalate this case to court?')) {
+            router.post(route('secretary.cases.escalate', blotter.id));
+        }
+    };
+    // ----------------------
 
     const openMediationDetails = (mediation) => {
         setSelectedMediation(mediation);
@@ -49,6 +63,8 @@ export default function CaseHistory({ blotter }) {
         });
     };
 
+    const isCaseClosed = blotter.status === 'Resolved' || blotter.status === 'Escalated to Court';
+
     return (
         <SecretaryLayout>
             <Head title={`Case Details - ${blotter.case_number}`} />
@@ -59,19 +75,45 @@ export default function CaseHistory({ blotter }) {
                         <Link href={route('secretary.blotters')} className="text-xs font-bold text-blue-600 hover:underline">
                             &larr; Back to Blotter Records
                         </Link>
-                        <h2 className="text-xl font-bold text-slate-800 mt-1">Case #{blotter.case_number}</h2>
+                        <h2 className="text-xl font-bold text-slate-800 mt-1">
+                            Case #{blotter.case_number} 
+                            <span className="ml-3 text-sm font-normal px-2 py-1 bg-slate-100 rounded-md text-slate-600">
+                                {blotter.status}
+                            </span>
+                        </h2>
                     </div>
-                    {mediations.length < 3 && (
-                        <button
-                            onClick={() => setShowScheduleModal(true)}
-                            className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-blue-700 transition"
-                        >
-                            + Schedule Next Mediation ({mediations.length + 1}/3)
-                        </button>
+                    
+                    {/* --- Updated Action Buttons Section --- */}
+                    {!isCaseClosed && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleResolve}
+                                className="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-green-700 transition"
+                            >
+                                Resolve Case
+                            </button>
+
+                            {mediations.length >= 3 ? (
+                                <button
+                                    onClick={handleEscalate}
+                                    className="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-red-700 transition"
+                                >
+                                    Escalate to Court
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setShowScheduleModal(true)}
+                                    className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                                >
+                                    + Schedule Next Mediation ({mediations.length + 1}/3)
+                                </button>
+                            )}
+                        </div>
                     )}
+                    {/* -------------------------------------- */}
                 </div>
 
-                {/* Scheduled Hearings Section */}
+                {/* Rest of the component code (Modals and Hearing Sections) remains identical... */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
                     <h3 className="text-base font-bold text-slate-800">Mediation Hearings</h3>
                     {mediations.length > 0 ? (

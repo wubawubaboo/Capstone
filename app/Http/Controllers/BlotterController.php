@@ -212,4 +212,44 @@ class BlotterController extends Controller
             'blotter' => $blotter
         ]);
     }
+
+    public function resolveCase($id)
+    {
+        $blotter = BlotterRecord::findOrFail($id);
+        
+        $blotter->update(['status' => 'Resolved']);
+
+        if ($blotter->report_id) {
+            $report = Report::find($blotter->report_id);
+            if ($report) {
+                $report->update(['status' => 'completed']);
+            }
+        }
+
+        return redirect()->route('secretary.blotters')->with('success', 'Case resolved and report closed.');
+    }
+
+    public function escalateCase($id)
+    {
+        $blotter = BlotterRecord::findOrFail($id);
+        
+        $blotter->update(['status' => 'Escalated to Court']);
+
+        if ($blotter->report_id) {
+            $report = Report::find($blotter->report_id);
+            if ($report) {
+                $report->update(['status' => 'escalated']);
+            }
+        }
+
+        SystemLog::logAction(
+            Auth::user()->barangay_id, 
+            Auth::id(), 
+            'UPDATE', 
+            'Blotter', 
+            "Escalated Case #{$blotter->case_number} to Court."
+        );
+
+        return redirect()->route('secretary.blotters')->with('success', 'Case escalated to court.');
+    }
 }
