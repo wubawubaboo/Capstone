@@ -89,6 +89,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::get('/case-history/{id}', [BlotterController::class, 'caseHistory'])->name('case-history');
         Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');
+        Route::put('/mediation/{id}/notes', [BlotterController::class, 'updateMediationNotes'])->name('mediation-notes.update');
         Route::post('/cases/{id}/schedule-mediation', [BlotterController::class, 'scheduleMediation'])->name('cases.schedule-mediation');
         Route::get('/account-requests', [AuthController::class, 'accountRequests'])->name('account-requests');
         Route::post('/account-requests/{user}/approve', [AuthController::class, 'approveAccount'])->name('account-requests.approve');

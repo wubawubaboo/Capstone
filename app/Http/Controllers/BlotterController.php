@@ -146,12 +146,41 @@ class BlotterController extends Controller
 
     public function caseHistory($id)
     {
-        $blotter = BlotterRecord::with(['report.user', 'receiver', 'vawcDetail', 'mediations'])
+        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+            ->whereDoesntHave('vawcDetail')
+            ->with(['report.user', 'receiver', 'vawcDetail', 'mediations'])
             ->findOrFail($id);
 
         return Inertia::render('Secretary/CaseHistory', [
             'blotter' => $blotter
         ]);
+    }
+
+    public function updateMediationNotes(Request $request, $id)
+    {
+        $mediation = MediationSchedule::whereHas('blotter', function ($query) {
+                $query->where('barangay_id', Auth::user()->barangay_id)
+                    ->whereDoesntHave('vawcDetail');
+            })
+            ->findOrFail($id);
+
+        $validated = $request->validate([
+            'notes' => 'nullable|string|max:10000',
+        ]);
+
+        $mediation->update([
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        SystemLog::logAction(
+            Auth::user()->barangay_id,
+            Auth::id(),
+            'UPDATE',
+            'Mediation Schedule',
+            "Updated notes for Session #{$mediation->meeting_number} of case #{$mediation->blotter->case_number}."
+        );
+
+        return back()->with('success', 'Mediation meeting notes saved successfully.');
     }
 
     public function mediationCalendar()
