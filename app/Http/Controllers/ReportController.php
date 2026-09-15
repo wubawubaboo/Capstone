@@ -162,12 +162,10 @@ class ReportController extends Controller {
     {
         $query = Report::with('user');
 
-        // Apply status filter if present
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
         });
 
-        // Retain SOS Critical priority sorting, then paginate
         $reports = $query->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
             ->orderBy('created_at', 'desc')
             ->paginate(15)

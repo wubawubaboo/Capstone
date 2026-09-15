@@ -57,7 +57,6 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                         <p className="text-sm text-slate-500 mt-1">Manage community requests and dispatch barangay assets.</p>
                     </div>
 
-                    {/* Styled Filter Dropdown */}
                     <div className="relative">
                         <select 
                             value={statusFilter} 
@@ -70,7 +69,6 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                             <option value="Completed">Completed</option>
                         </select>
                         
-                        {/* Custom Chevron Icon */}
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                             <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -85,6 +83,8 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                             <tr className="border-b border-slate-200 text-slate-600 font-semibold bg-slate-50">
                                 <th className="py-3 px-4">Request ID</th>
                                 <th className="py-3 px-4">Requester</th>
+                                {/* Added explicit address column */}
+                                <th className="py-3 px-4">Location/Address</th>
                                 <th className="py-3 px-4">Service Type</th>
                                 <th className="py-3 px-4">Status</th>
                                 <th className="py-3 px-4">Dispatched Asset</th>
@@ -96,6 +96,10 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                                 <tr key={row.id} className="hover:bg-slate-50 transition">
                                     <td className="py-3 px-4 font-semibold text-slate-800">REQ-{row.id}</td>
                                     <td className="py-3 px-4 text-slate-700">{row.requester?.full_name || 'Unknown'}</td>
+                                    
+                                    {/* Dispatching logic heavily depends on knowing the resident address */}
+                                    <td className="py-3 px-4 text-slate-700">{row.requester?.address || 'N/A'}</td>
+
                                     <td className="py-3 px-4 text-slate-700 font-medium">{row.service_type}</td>
                                     <td className="py-3 px-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(row.status)}`}>
@@ -144,7 +148,7 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan="6" className="py-6 text-center text-slate-500">No service requests match this status.</td>
+                                    <td colSpan="7" className="py-6 text-center text-slate-500">No service requests match this status.</td>
                                 </tr>
                             )}
                         </tbody>

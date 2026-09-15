@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('password');
             $table->string('role')->default('resident');
             $table->foreignId('barangay_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('address')->nullable();
+            $table->date('date_of_birth')->nullable();
+            $table->year('start_of_residency')->nullable();
             $table->string('id_photo_path')->nullable();
             $table->string('selfie_id_path')->nullable();
             $table->boolean('is_verified')->default(false);

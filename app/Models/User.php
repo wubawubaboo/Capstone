@@ -24,6 +24,9 @@ class User extends Authenticatable
         'password',
         'role',
         'barangay_id',
+        'address',     
+        'date_of_birth',     
+        'start_of_residency', 
         'id_photo_path',
         'selfie_id_path',
         'is_verified',
@@ -49,10 +52,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'date_of_birth' => 'date',         // Added cast
+            'start_of_residency' => 'integer', // Added cast
         ];
     }
 
-protected $guarded = [];
+    protected $guarded = [];
 
     // Relationships
     public function barangay() { return $this->belongsTo(Barangay::class); }

@@ -13,7 +13,6 @@ class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Latest Incident (For the UI Card - Removed the SOS filter)
         $latestReport = Report::whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->latest()

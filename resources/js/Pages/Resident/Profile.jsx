@@ -3,17 +3,20 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import ResidentLayout from '@/Layouts/ResidentLayout';
 
 export default function Profile({ profileUser }) {
-    // 1. Grab the explicitly passed user, fallback to global auth if needed
     const { auth } = usePage().props;
     const user = profileUser || auth?.user || {};
 
-    // 2. Safe variable assignments
     const displayName = user.full_name || 'Resident Account';
     const userInitial = displayName.charAt(0).toUpperCase();
     const barangayName = user.barangay?.name || 'Your Barangay';
     
-    // Successfully reads from the database
+
     const userPhone = user.phone_number || 'Not provided';
+    const address = user.address || 'Not provided';
+    const dob = user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not provided';
+    const residencyStart = user.start_of_residency || 'Not provided';
+    
+    const isVerified = user.is_verified === true || user.is_verified === 1;
 
     return (
         <div className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -38,10 +41,14 @@ export default function Profile({ profileUser }) {
                                 {barangayName}
                             </p>
                             <div className="mt-3">
-                                {user.is_verified ? (
-                                    <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">✓ VERIFIED RESIDENT</span>
+                                {isVerified ? (
+                                    <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+                                        ✓ VERIFIED RESIDENT
+                                    </span>
                                 ) : (
-                                    <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">PENDING VERIFICATION</span>
+                                    <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full border border-amber-200">
+                                        PENDING VERIFICATION
+                                    </span>
                                 )}
                             </div>
                         </div>
@@ -49,12 +56,27 @@ export default function Profile({ profileUser }) {
 
                     {/* Account Details */}
                     <div className="py-8 space-y-6">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">Contact Information</h3>
+                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">Personal & Contact Information</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</label>
                                 <p className="text-slate-900 font-medium">{userPhone}</p>
+                            </div>
+                            
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Home Address</label>
+                                <p className="text-slate-900 font-medium">{address}</p>
+                            </div>
+
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date of Birth</label>
+                                <p className="text-slate-900 font-medium">{dob}</p>
+                            </div>
+
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Resident Since (Year)</label>
+                                <p className="text-slate-900 font-medium">{residencyStart}</p>
                             </div>
                         </div>
                     </div>

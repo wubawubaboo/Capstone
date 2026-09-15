@@ -29,9 +29,11 @@ class VawcController extends Controller
 
     public function create()
     {
+        // MODIFIED: Included 'address', 'date_of_birth', and 'start_of_residency' 
+        // to ensure the frontend receives these new fields for context.
         $residents = User::where('barangay_id', Auth::user()->barangay_id)
             ->where('role', 'resident')
-            ->select('id', 'full_name', 'phone_number')
+            ->select('id', 'full_name', 'phone_number', 'address', 'date_of_birth', 'start_of_residency')
             ->get();
 
         return Inertia::render('VAWC/CreateBlotter', [
@@ -57,7 +59,6 @@ class VawcController extends Controller
 
         $barangayId = Auth::user()->barangay_id;
 
-        // Determine complainant details
         $complainantId = $validated['is_registered_complainant'] ? $validated['complainant_id'] : null;
         $complainantName = null;
 
@@ -165,38 +166,38 @@ class VawcController extends Controller
 
     public function scheduleMediation(Request $request, $id)
     {
-    $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-        ->whereHas('vawcDetail')
-        ->findOrFail($id);
+        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+            ->whereHas('vawcDetail')
+            ->findOrFail($id);
 
-    $validated = $request->validate([
-        'scheduled_date' => 'required|date|after:now',
-        'status'         => 'nullable|string|max:50',
-    ]);
+        $validated = $request->validate([
+            'scheduled_date' => 'required|date|after:now',
+            'status'         => 'nullable|string|max:50',
+        ]);
 
-    $meetingCount = MediationSchedule::where('blotter_record_id', $blotter->id)->count();
+        $meetingCount = MediationSchedule::where('blotter_record_id', $blotter->id)->count();
 
-    if ($meetingCount >= 3) {
-        return back()->withErrors(['error' => 'Maximum 3 mediation sessions reached for this case.']);
-    }
+        if ($meetingCount >= 3) {
+            return back()->withErrors(['error' => 'Maximum 3 mediation sessions reached for this case.']);
+        }
 
-    $schedule = MediationSchedule::create([
-        'blotter_record_id' => $blotter->id,
-        'meeting_number'    => $meetingCount + 1,
-        'scheduled_date'    => $validated['scheduled_date'],
-        'status'            => $validated['status'] ?? 'Scheduled',
-    ]);
+        $schedule = MediationSchedule::create([
+            'blotter_record_id' => $blotter->id,
+            'meeting_number'    => $meetingCount + 1,
+            'scheduled_date'    => $validated['scheduled_date'],
+            'status'            => $validated['status'] ?? 'Scheduled',
+        ]);
 
-    $blotter->update(['status' => 'Under Mediation']);
+        $blotter->update(['status' => 'Under Mediation']);
 
-    SystemLog::logAction(
-        Auth::user()->barangay_id,
-        Auth::id(),
-        'CREATE',
-        'VAWC Mediation Schedule',
-        "Scheduled confidential Session #{$schedule->meeting_number} for case #{$blotter->case_number}."
-    );
+        SystemLog::logAction(
+            Auth::user()->barangay_id,
+            Auth::id(),
+            'CREATE',
+            'VAWC Mediation Schedule',
+            "Scheduled confidential Session #{$schedule->meeting_number} for case #{$blotter->case_number}."
+        );
 
-    return back()->with('success', "VAWC mediation session #{$schedule->meeting_number} scheduled successfully.");
+        return back()->with('success', "VAWC mediation session #{$schedule->meeting_number} scheduled successfully.");
     }
 }

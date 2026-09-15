@@ -9,6 +9,9 @@ export default function AccountManagement({ staffAccounts, barangays }) {
         barangay_id: '',
         role: 'secretary',
         password: '',
+        address: '',
+        date_of_birth: '',
+        start_of_residency: '',
     });
 
     const submit = (e) => {
@@ -48,6 +51,50 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                                 required 
                             />
                             {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
+                        </div>
+
+                        {/* New Address Field */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                            <input 
+                                type="text" 
+                                className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-colors" 
+                                value={data.address} 
+                                onChange={e => setData('address', e.target.value)} 
+                                placeholder="Street, Phase, or Block No."
+                                required 
+                            />
+                            {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                        </div>
+
+                        {/* New Date of Birth & Residency Fields in a grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+                                <input 
+                                    type="date" 
+                                    className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-colors" 
+                                    value={data.date_of_birth} 
+                                    onChange={e => setData('date_of_birth', e.target.value)} 
+                                    required 
+                                />
+                                {errors.date_of_birth && <p className="text-red-500 text-xs mt-1">{errors.date_of_birth}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Start of Residency (Year)</label>
+                                <input 
+                                    type="number" 
+                                    min="1900"
+                                    max={new Date().getFullYear()}
+                                    className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-colors" 
+                                    value={data.start_of_residency} 
+                                    onChange={e => setData('start_of_residency', e.target.value)} 
+                                    placeholder="e.g. 2015"
+                                    required 
+                                />
+                                {errors.start_of_residency && <p className="text-red-500 text-xs mt-1">{errors.start_of_residency}</p>}
+                            </div>
                         </div>
 
                         <div>
@@ -114,6 +161,7 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                             <tr>
                                 <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Name</th>
                                 <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Phone Number</th>
+                                <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Address</th>
                                 <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Barangay</th>
                                 <th className="px-6 py-3 font-bold text-slate-500 uppercase text-xs tracking-wider">Role</th>
                             </tr>
@@ -129,6 +177,9 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                                             {account.phone_number}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                                            {account.address || 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-slate-600">
                                             {account.barangay?.name || 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-slate-600 capitalize">
@@ -138,7 +189,7 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                                    <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
                                         No active staff accounts found.
                                     </td>
                                 </tr>

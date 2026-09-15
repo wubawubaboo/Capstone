@@ -19,7 +19,6 @@ class DocumentRequestController extends Controller
             return $q->where('status', $status);
         });
 
-        // Append query string to persist filters across pagination pages
         $requests = $query->latest()->paginate(15)->withQueryString();
 
         return Inertia::render('Secretary/DocumentRequests', [

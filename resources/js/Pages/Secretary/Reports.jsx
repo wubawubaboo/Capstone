@@ -14,7 +14,7 @@ const ReportDetailsModal = ({ report, onClose }) => {
                 {/* Modal Header */}
                 <div className={`p-4 border-b flex justify-between items-center ${isCritical ? 'bg-red-600 text-white' : 'bg-slate-800 text-white'}`}>
                     <h3 className="text-lg font-black uppercase tracking-wider">
-                        {isCritical ? '🚨 URGENT SOS ALERT' : '📝 Incident Report Details'}
+                        {isCritical ? '🚨 URGENT SOS ALERT' : '📋 Incident Report Details'}
                     </h3>
                     <button onClick={onClose} className="text-white hover:text-gray-200 font-bold text-xl">&times;</button>
                 </div>
@@ -28,6 +28,8 @@ const ReportDetailsModal = ({ report, onClose }) => {
                             <p className="text-xs font-bold text-slate-500 uppercase">Reporter</p>
                             <p className="text-base font-medium text-slate-900">{report.user?.full_name || 'Unknown User'}</p>
                             <p className="text-sm text-slate-600">{report.user?.phone_number || 'No Contact Provided'}</p>
+                            {/* Added Address context for emergency response */}
+                            <p className="text-sm text-slate-600">{report.user?.address || 'No Address Provided'}</p>
                         </div>
 
                         <div>
@@ -107,14 +109,12 @@ export default function Reports({ reports, filters }) {
     const data = reports?.data || [];
     const [selectedReport, setSelectedReport] = useState(null);
     
-    // Initialize state with the prop passed from the backend
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
 
     const handleFilterChange = (e) => {
         const selectedStatus = e.target.value;
         setStatusFilter(selectedStatus);
 
-        // Send a GET request with the new filter parameter, preserving current page state
         router.get(
             route(route().current()), 
             { status: selectedStatus },
@@ -134,7 +134,6 @@ export default function Reports({ reports, filters }) {
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-slate-900">Incident & Emergency Queue</h2>
                     
-                    {/* Styled Filter Dropdown */}
                     <div className="relative">
                         <select 
                             value={statusFilter} 
@@ -147,7 +146,6 @@ export default function Reports({ reports, filters }) {
                             <option value="completed">Completed</option>
                         </select>
                         
-                        {/* Custom Chevron Icon */}
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                             <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />

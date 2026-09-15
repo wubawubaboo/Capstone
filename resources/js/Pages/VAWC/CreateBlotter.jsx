@@ -77,7 +77,8 @@ export default function CreateBlotter({ residents = [] }) {
                                     <option value="">-- Select Registered Resident --</option>
                                     {residents.map((res) => (
                                         <option key={res.id} value={res.id}>
-                                            {res.full_name} ({res.email})
+                                            {/* Updated to show the new address field instead of the non-existent email field */}
+                                            {res.full_name} - {res.address || 'No address on file'}
                                         </option>
                                     ))}
                                 </select>
@@ -136,7 +137,8 @@ export default function CreateBlotter({ residents = [] }) {
                                     <option value="">-- Select Registered Resident --</option>
                                     {residents.map((res) => (
                                         <option key={res.id} value={res.id}>
-                                            {res.full_name}
+                                            {/* Updated to show the new address field here as well */}
+                                            {res.full_name} - {res.address || 'No address on file'}
                                         </option>
                                     ))}
                                 </select>

@@ -47,9 +47,13 @@ const RejectAccountModal = ({ user, onClose }) => {
 };
 
 const EditAccountModal = ({ user, type, onClose }) => {
+    // Added new fields to modal form state
     const { data, setData, put, processing, errors } = useForm({
         full_name: user.full_name,
         phone_number: user.phone_number,
+        address: user.address || '',
+        date_of_birth: user.date_of_birth || '',
+        start_of_residency: user.start_of_residency || '',
     });
 
     const submitUpdate = (e) => {
@@ -66,7 +70,7 @@ const EditAccountModal = ({ user, type, onClose }) => {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-slate-900 bg-opacity-50 z-50 p-4">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md border border-slate-200">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md border border-slate-200 max-h-[90vh] overflow-y-auto">
                 <h3 className="text-lg font-bold mb-4 text-slate-800">Edit {type === 'resident' ? 'Resident' : 'Police'} Account</h3>
                 <form onSubmit={submitUpdate}>
                     <div className="mb-4">
@@ -74,11 +78,33 @@ const EditAccountModal = ({ user, type, onClose }) => {
                         <input type="text" value={data.full_name} onChange={e => setData('full_name', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
                         {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name}</p>}
                     </div>
-                    <div className="mb-6">
+                    <div className="mb-4">
                         <label className="block text-sm font-bold text-slate-700 mb-1">Phone Number</label>
                         <input type="text" value={data.phone_number} onChange={e => setData('phone_number', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" maxLength="11" required />
                         {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
                     </div>
+                    
+                    {/* Added Address Input */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Address</label>
+                        <input type="text" value={data.address} onChange={e => setData('address', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
+                        {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                    </div>
+
+                    {/* Added DOB & Residency Inputs */}
+                    <div className="mb-6 grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Date of Birth</label>
+                            <input type="date" value={data.date_of_birth} onChange={e => setData('date_of_birth', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
+                            {errors.date_of_birth && <p className="text-red-500 text-xs mt-1">{errors.date_of_birth}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Start of Residency</label>
+                            <input type="number" min="1900" max={new Date().getFullYear()} placeholder="YYYY" value={data.start_of_residency} onChange={e => setData('start_of_residency', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
+                            {errors.start_of_residency && <p className="text-red-500 text-xs mt-1">{errors.start_of_residency}</p>}
+                        </div>
+                    </div>
+
                     <div className="flex justify-end gap-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm font-bold">CANCEL</button>
                         <button type="submit" disabled={processing} className="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-bold">{processing ? 'SAVING...' : 'SAVE CHANGES'}</button>
@@ -93,12 +119,15 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
     const [userToReject, setUserToReject] = useState(null);
     const [userToEdit, setUserToEdit] = useState(null);
     const [editType, setEditType] = useState(null); 
-    const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'verified', or 'police'
+    const [activeTab, setActiveTab] = useState('pending'); 
 
-    // Form setup for creating Barangay Police accounts
+    // Form setup for creating Barangay Police accounts with new fields
     const { data: policeData, setData: setPoliceData, post: postPolice, processing: policeProcessing, errors: policeErrors, reset: resetPolice } = useForm({
         name: '',
         phone_number: '',
+        address: '',
+        date_of_birth: '',
+        start_of_residency: '',
         password: '',
         password_confirmation: '',
     });
@@ -172,7 +201,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                         <td className="py-4 px-2 font-bold">
                                             {item.id_photo_path ? (
                                                 <a href={route('secretary.account-requests.id-photo', item.id)} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline flex items-center gap-1">
-                                                    🔍 View ID
+                                                    👁️ View ID
                                                 </a>
                                             ) : (
                                                 <span className="text-red-500">No ID Provided</span>
@@ -221,6 +250,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                 <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-xs">
                                     <th className="py-3 px-2">Name</th>
                                     <th className="py-3 px-2">Phone Number</th>
+                                    <th className="py-3 px-2">Address</th>
                                     <th className="py-3 px-2">Uploaded Files</th>
                                     <th className="py-3 px-2 text-right">Actions</th>
                                 </tr>
@@ -230,8 +260,9 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                     <tr key={item.id} className="hover:bg-slate-50">
                                         <td className="py-4 px-2 font-medium text-slate-800">{item.full_name}</td>
                                         <td className="py-4 px-2 text-slate-600">{item.phone_number}</td>
+                                        <td className="py-4 px-2 text-slate-600">{item.address || 'N/A'}</td>
                                         <td className="py-4 px-2 text-xs font-bold space-y-1">
-                                            {item.id_photo_path ? <a href={route('secretary.account-requests.id-photo', item.id)} target="_blank" className="text-blue-600 hover:underline block">🔍 View ID</a> : <span className="text-slate-400 block">No ID</span>}
+                                            {item.id_photo_path ? <a href={route('secretary.account-requests.id-photo', item.id)} target="_blank" className="text-blue-600 hover:underline block">👁️ View ID</a> : <span className="text-slate-400 block">No ID</span>}
                                             {item.selfie_id_path ? <a href={route('secretary.account-requests.selfie-photo', item.id)} target="_blank" className="text-emerald-600 hover:underline block">📸 View Selfie</a> : <span className="text-slate-400 block">No Selfie</span>}
                                         </td>
                                         <td className="py-4 px-2 text-right">
@@ -242,7 +273,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                         </td>
                                     </tr>
                                 )) : (
-                                    <tr><td colSpan="4" className="py-6 text-center text-slate-500">No verified residents found.</td></tr>
+                                    <tr><td colSpan="5" className="py-6 text-center text-slate-500">No verified residents found.</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -266,6 +297,26 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                     <input type="text" value={policeData.phone_number} onChange={e => setPoliceData('phone_number', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" maxLength="11" required />
                                     {policeErrors.phone_number && <p className="text-red-500 text-xs mt-1">{policeErrors.phone_number}</p>}
                                 </div>
+                                
+                                {/* Added Police New Fields */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Address</label>
+                                    <input type="text" value={policeData.address} onChange={e => setPoliceData('address', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
+                                    {policeErrors.address && <p className="text-red-500 text-xs mt-1">{policeErrors.address}</p>}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
+                                        <input type="date" value={policeData.date_of_birth} onChange={e => setPoliceData('date_of_birth', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
+                                        {policeErrors.date_of_birth && <p className="text-red-500 text-xs mt-1">{policeErrors.date_of_birth}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 mb-1">Residency (Year)</label>
+                                        <input type="number" min="1900" max={new Date().getFullYear()} placeholder="YYYY" value={policeData.start_of_residency} onChange={e => setPoliceData('start_of_residency', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
+                                        {policeErrors.start_of_residency && <p className="text-red-500 text-xs mt-1">{policeErrors.start_of_residency}</p>}
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
                                     <input type="password" value={policeData.password} onChange={e => setPoliceData('password', e.target.value)} className="w-full border-slate-300 rounded text-sm p-2" required />
@@ -290,6 +341,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                         <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase text-xs">
                                             <th className="py-3 px-4">Name</th>
                                             <th className="py-3 px-4">Phone Number</th>
+                                            <th className="py-3 px-4">Address</th>
                                             <th className="py-3 px-4 text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -298,6 +350,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                             <tr key={police.id} className="hover:bg-slate-50">
                                                 <td className="py-3 px-4 font-medium text-slate-800">{police.full_name}</td>
                                                 <td className="py-3 px-4 text-slate-600">{police.phone_number}</td>
+                                                <td className="py-3 px-4 text-slate-600">{police.address || 'N/A'}</td>
                                                 <td className="py-3 px-4 text-right">
                                                     <div className="flex justify-end gap-2">
                                                         <button onClick={() => openEditModal(police, 'police')} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700">EDIT</button>
@@ -307,7 +360,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                             </tr>
                                         ))}
                                         {policeAccounts.length === 0 && (
-                                            <tr><td colSpan="3" className="py-6 text-center text-slate-500">No police accounts found.</td></tr>
+                                            <tr><td colSpan="4" className="py-6 text-center text-slate-500">No police accounts found.</td></tr>
                                         )}
                                     </tbody>
                                 </table>

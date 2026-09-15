@@ -125,6 +125,10 @@ class AuthController extends Controller
             'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'barangay_id' => ['required', 'exists:barangays,id'],
+            // Added validations
+            'address' => ['required', 'string', 'max:255'],
+            'date_of_birth' => ['required', 'date'],
+            'start_of_residency' => ['required', 'integer', 'min:1900', 'max:' . date('Y')],
             'id_photo' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:5120'], 
             'selfie_id_photo' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
         ]);
@@ -138,6 +142,9 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'resident',
             'barangay_id' => $request->barangay_id,
+            'address' => $request->address,
+            'date_of_birth' => $request->date_of_birth,
+            'start_of_residency' => $request->start_of_residency,
             'id_photo_path' => $idPath,
             'selfie_id_path' => $selfiePath,
             'is_verified' => false,
@@ -167,6 +174,9 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'barangay_id' => ['required', 'exists:barangays,id'],
             'role' => ['required'],
+            'address' => ['required', 'string', 'max:255'],
+            'date_of_birth' => ['required', 'date'],
+            'start_of_residency' => ['required', 'integer', 'min:1900', 'max:' . date('Y')],
         ]);
 
         $user = User::create([
@@ -175,6 +185,9 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'barangay_id' => $request->barangay_id,
+            'address' => $request->address,
+            'date_of_birth' => $request->date_of_birth,
+            'start_of_residency' => $request->start_of_residency,
             'is_verified' => true,
         ]);
 
@@ -228,7 +241,6 @@ class AuthController extends Controller
 
     public function approveAccount(User $user, PhilSmsService $smsService)
     {
-
         $user->update(['is_verified' => true]);
 
         $message = "Your account has been approved. You may now log in to the portal and access our services.";
@@ -293,6 +305,9 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:11', 'unique:users'], 
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'address' => ['required', 'string', 'max:255'],
+            'date_of_birth' => ['required', 'date'],
+            'start_of_residency' => ['required', 'integer', 'min:1900', 'max:' . date('Y')],
         ]);
 
         User::create([
@@ -301,6 +316,9 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'barangay_police',
             'barangay_id' => Auth::user()->barangay_id,
+            'address' => $request->address,
+            'date_of_birth' => $request->date_of_birth,
+            'start_of_residency' => $request->start_of_residency,
             'is_verified' => true, 
             'is_active' => true,
         ]);
@@ -313,9 +331,12 @@ class AuthController extends Controller
         $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:11', 'unique:users,phone_number,' . $user->id],
+            'address' => ['required', 'string', 'max:255'],
+            'date_of_birth' => ['required', 'date'],
+            'start_of_residency' => ['required', 'integer', 'min:1900', 'max:' . date('Y')],
         ]);
 
-        $user->update($request->only('full_name', 'phone_number'));
+        $user->update($request->only('full_name', 'phone_number', 'address', 'date_of_birth', 'start_of_residency'));
         return redirect()->back()->with('success', 'Police account updated.');
     }
 
@@ -330,9 +351,12 @@ class AuthController extends Controller
         $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:11', 'unique:users,phone_number,' . $user->id],
+            'address' => ['required', 'string', 'max:255'],
+            'date_of_birth' => ['required', 'date'],
+            'start_of_residency' => ['required', 'integer', 'min:1900', 'max:' . date('Y')],
         ]);
 
-        $user->update($request->only('full_name', 'phone_number'));
+        $user->update($request->only('full_name', 'phone_number', 'address', 'date_of_birth', 'start_of_residency'));
         return redirect()->back()->with('success', 'Resident account updated.');
     }
 

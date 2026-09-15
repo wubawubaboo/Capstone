@@ -5,6 +5,9 @@ export default function Registration({ barangays }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         phone_number: '',
+        address: '',
+        date_of_birth: '',
+        start_of_residency: '',
         password: '',
         password_confirmation: '',
         barangay_id: '',
@@ -42,9 +45,53 @@ export default function Registration({ barangays }) {
                             value={data.phone_number}
                             onChange={(e) => setData('phone_number', e.target.value)}
                             className="w-full border border-gray-300 rounded p-2.5 text-sm"
+                            placeholder="09xxxxxxxxx"
                             required
                         />
                         {errors.phone_number && <div className="text-red-600 text-xs mt-1">{errors.phone_number}</div>}
+                    </div>
+
+                    {/* New Address Field */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Address</label>
+                        <input
+                            type="text"
+                            value={data.address}
+                            onChange={(e) => setData('address', e.target.value)}
+                            className="w-full border border-gray-300 rounded p-2.5 text-sm"
+                            placeholder="Street, Phase, or Block No."
+                            required
+                        />
+                        {errors.address && <div className="text-red-600 text-xs mt-1">{errors.address}</div>}
+                    </div>
+
+                    {/* New Date of Birth & Residency Fields in a grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Date of Birth</label>
+                            <input
+                                type="date"
+                                value={data.date_of_birth}
+                                onChange={(e) => setData('date_of_birth', e.target.value)}
+                                className="w-full border border-gray-300 rounded p-2.5 text-sm"
+                                required
+                            />
+                            {errors.date_of_birth && <div className="text-red-600 text-xs mt-1">{errors.date_of_birth}</div>}
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Residency Start (Year)</label>
+                            <input
+                                type="number"
+                                min="1900"
+                                max={new Date().getFullYear()}
+                                placeholder="YYYY"
+                                value={data.start_of_residency}
+                                onChange={(e) => setData('start_of_residency', e.target.value)}
+                                className="w-full border border-gray-300 rounded p-2.5 text-sm"
+                                required
+                            />
+                            {errors.start_of_residency && <div className="text-red-600 text-xs mt-1">{errors.start_of_residency}</div>}
+                        </div>
                     </div>
 
                     <div>
@@ -117,7 +164,7 @@ export default function Registration({ barangays }) {
                     <button
                         type="submit"
                         disabled={processing}
-                        className="w-full bg-blue-900 text-white font-bold py-2.5 rounded hover:bg-blue-950 transition text-sm disabled:opacity-50"
+                        className="w-full bg-blue-900 text-white font-bold py-2.5 rounded hover:bg-blue-950 transition text-sm disabled:opacity-50 mt-4"
                     >
                         {processing ? 'Submitting...' : 'Register Account'}
                     </button>

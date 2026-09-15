@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Models\SystemLog;
 use App\Models\Report;
 use App\Models\DocumentRequest;
-use App\Models\Barangay; // Added Barangay model
+use App\Models\Barangay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -43,6 +43,9 @@ class AdminController extends Controller
             'barangay_id' => 'required|exists:barangays,id',
             'role' => 'required|in:secretary,vawc_officer',
             'password' => 'required|min:8',
+            'address' => 'required|string|max:255',
+            'date_of_birth' => 'required|date',
+            'start_of_residency' => 'required|integer|min:1900|max:' . date('Y'),
         ]);
 
         User::create([
@@ -52,6 +55,9 @@ class AdminController extends Controller
             'role' => $validated['role'],
             'password' => Hash::make($validated['password']),
             'is_verified' => true,
+            'address' => $validated['address'] ?? null,
+            'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'start_of_residency' => $validated['start_of_residency'] ?? null,
         ]);
 
         return redirect()->back()->with('success', 'Administrative account created successfully.');
