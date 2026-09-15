@@ -45,9 +45,9 @@ class ReportController extends Controller {
         return to_route('resident.home')->with('success', 'Emergency report submitted successfully.');  
     }
 
-    public function showAttachment(Report $report) 
+    public function showAttachment(Report $report)
     {
-        if (Auth::id() !== $report->user_id && Auth::user()->role !== 'secretary') {
+        if (Auth::id() !== $report->user_id && !in_array(Auth::user()->role, ['secretary', 'vawc'])) {
             abort(403, 'Unauthorized to view this evidence.');
         }
 
@@ -62,7 +62,13 @@ class ReportController extends Controller {
 
     public function profile()
     {
-        return Inertia::render('Resident/Profile');
+        /** @var User $authUser */
+        $authUser = Auth::user();
+        $user = User::with('barangay')->findOrFail($authUser->id);
+
+        return Inertia::render('Resident/Profile', [
+            'profileUser' => $user,
+        ]);
     }
 
 
@@ -172,6 +178,25 @@ class ReportController extends Controller {
             ->withQueryString();
 
         return Inertia::render('Secretary/Reports', [
+            'reports' => $reports,
+            'filters' => $request->only('status')
+        ]);
+    }
+
+    public function vawcIndex(Request $request)
+    {
+        $query = Report::with('user');
+
+        $query->when($request->input('status'), function ($q, $status) {
+            return $q->where('status', $status);
+        });
+
+        $reports = $query->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
+            ->orderBy('created_at', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('VAWC/Reports', [
             'reports' => $reports,
             'filters' => $request->only('status')
         ]);

@@ -124,6 +124,12 @@ Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
         Route::get('/case-history/{id}', [VawcController::class, 'caseHistory'])->name('case-history');
         Route::get('/mediation-calendar', [VawcController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::post('/cases/{id}/schedule-mediation', [VawcController::class, 'scheduleMediation'])->name('cases.schedule-mediation');
+        Route::put('/mediation/{id}/notes', [VawcController::class, 'updateMediationNotes'])->name('mediation-notes.update');
+        Route::post('/cases/{id}/resolve', [VawcController::class, 'resolveCase'])->name('cases.resolve');
+        Route::post('/cases/{id}/escalate', [VawcController::class, 'escalateCase'])->name('cases.escalate');
+        Route::get('/reports', [ReportController::class, 'vawcIndex'])->name('reports');
+        Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
+        Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])->name('reports.attachment');
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });
