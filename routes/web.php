@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BarangayController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AssetController;
@@ -111,6 +112,8 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/police-accounts', [AuthController::class, 'storePolice'])->name('police.store');
         Route::put('/police-accounts/{user}', [AuthController::class, 'updatePolice'])->name('police.update');
         Route::delete('/police-accounts/{user}', [AuthController::class, 'destroyPolice'])->name('police.destroy');
+        Route::get('/barangay-profile', [BarangayController::class, 'editProfile'])->name('barangay.edit');
+        Route::put('/barangay-profile', [BarangayController::class, 'updateProfile'])->name('barangay.update');
     });
 });
 
@@ -149,6 +152,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/accounts', [AdminController::class, 'accounts'])->name('accounts');
         Route::post('/accounts', [AdminController::class, 'storeAccount'])->name('accounts.store');
         Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('logs');
+        Route::resource('barangays', BarangayController::class)->except(['create', 'show', 'edit']);
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });

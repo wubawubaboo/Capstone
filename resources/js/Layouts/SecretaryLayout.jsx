@@ -14,6 +14,7 @@ export default function SecretaryLayout({ children }) {
         { label: 'Service Requests', href: route('secretary.service-requests'), name: 'secretary.service-requests' },
         { label: 'Asset Management', href: route('secretary.assets'), name: 'secretary.assets' },
         { label: 'Incident Reports', href: route('secretary.reports'), name: 'secretary.reports' },
+        { label: 'Barangay Profile', href: route('secretary.barangay.edit'), name: 'secretary.barangay.edit' },
         { label: 'Analytics', href: route('secretary.analytics'), name: 'secretary.analytics' },
 
     ];

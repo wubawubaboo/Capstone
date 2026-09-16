@@ -21,7 +21,6 @@ class Barangay extends Model
     public function blotters() { return $this->hasMany(BlotterRecord::class); }
     public function systemLogs() { return $this->hasMany(SystemLog::class); }
 
-    // Utility Methods
     public function getAvailableAssets($assetType = null)
     {
         $query = $this->assets()->available();
