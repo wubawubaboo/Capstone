@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
+import GenerateReportModal from '@/Components/GenerateReportModal';
 
 export default function BlotterManagement({ blotters }) {
     const records = blotters?.data || [];
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const getStatusColor = (status) => {
         switch (status?.toLowerCase()) {
@@ -31,7 +33,13 @@ export default function BlotterManagement({ blotters }) {
                             placeholder="Search by name or case ID..."
                             className="text-sm border border-slate-300 rounded-md px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-slate-400"
                         />
-                        <Link 
+                        <button
+                            onClick={() => setShowReportModal(true)}
+                            className="bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-800 transition whitespace-nowrap inline-block"
+                        >
+                            ⬇ Generate Report
+                        </button>
+                        <Link
                             href={route('secretary.blotters.create')}
                             className="bg-[#0a2342] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition whitespace-nowrap inline-block"
                         >
@@ -90,6 +98,12 @@ export default function BlotterManagement({ blotters }) {
                     </table>
                 </div>
             </div>
+
+            <GenerateReportModal
+                show={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                exportUrl={route('secretary.blotters.export')}
+            />
         </SecretaryLayout>
     );
 }

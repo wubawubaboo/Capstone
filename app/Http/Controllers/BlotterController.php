@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BlottersExport;
 use App\Models\BlotterRecord;
 use App\Models\MediationSchedule;
 use App\Models\Report;
@@ -10,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BlotterController extends Controller
 {
@@ -24,6 +26,31 @@ class BlotterController extends Controller
     return Inertia::render('Secretary/BlotterManagement', [
         'blotters' => $blotters
     ]);
+    }
+
+    public function export(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $query = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+            ->whereDoesntHave('vawcDetail')
+            ->with(['report.user', 'receiver']);
+
+        if (!empty($validated['start_date']) && !empty($validated['end_date'])) {
+            $query->whereBetween('official_entry_date', [
+                $validated['start_date'] . ' 00:00:00',
+                $validated['end_date'] . ' 23:59:59',
+            ]);
+        }
+
+        $blotters = $query->latest()->get();
+
+        $filename = 'blotters-' . ($validated['start_date'] ?? now()->format('Y-m-d')) . '-to-' . ($validated['end_date'] ?? now()->format('Y-m-d')) . '.xlsx';
+
+        return Excel::download(new BlottersExport($blotters), $filename);
     }
 
     public function create(Request $request)

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
+import GenerateReportModal from '@/Components/GenerateReportModal';
 
 export default function ServiceRequests({ serviceRequests, availableAssets, filters }) {
     const requests = serviceRequests?.data || [];
     const [selectedAsset, setSelectedAsset] = useState({});
-    
+
     const [statusFilter, setStatusFilter] = useState(filters?.status || '');
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const handleFilterChange = (e) => {
         const selectedStatus = e.target.value;
@@ -57,22 +59,31 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                         <p className="text-sm text-slate-500 mt-1">Manage community requests and dispatch barangay assets.</p>
                     </div>
 
-                    <div className="relative">
-                        <select 
-                            value={statusFilter} 
-                            onChange={handleFilterChange}
-                            className="appearance-none bg-white border border-slate-200 text-slate-700 text-sm rounded-md pl-4 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowReportModal(true)}
+                            className="bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-800 transition whitespace-nowrap inline-block"
                         >
-                            <option value="">All Statuses</option>
-                            <option value="Pending">Pending</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                        </select>
-                        
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                            <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
+                            ⬇ Generate Report
+                        </button>
+
+                        <div className="relative">
+                            <select
+                                value={statusFilter}
+                                onChange={handleFilterChange}
+                                className="appearance-none bg-white border border-slate-200 text-slate-700 text-sm rounded-md pl-4 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -155,6 +166,13 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                     </table>
                 </div>
             </div>
+
+            <GenerateReportModal
+                show={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                exportUrl={route('secretary.service-requests.export')}
+                extraParams={statusFilter ? { status: statusFilter } : {}}
+            />
         </SecretaryLayout>
     );
 }

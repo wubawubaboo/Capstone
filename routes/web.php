@@ -73,11 +73,14 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::get('/', function () { return Inertia::render('Public/LandingPage'); })->name('landing');
         Route::get('/hotlines', function () { return Inertia::render('Public/Hotlines'); })->name('hotlines');
         Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests');
+        Route::get('/document-requests/export', [DocumentRequestController::class, 'export'])->name('document-requests.export');
         Route::post('/document-requests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])->name('document-requests.update-status');
         Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests');
+        Route::get('/service-requests/export', [ServiceRequestController::class, 'export'])->name('service-requests.export');
         Route::post('/service-requests/{serviceRequest}/assign', [ServiceRequestController::class, 'assignAsset'])->name('service-requests.assign');
         Route::post('/service-requests/{serviceRequest}/complete', [ServiceRequestController::class, 'complete'])->name('service-requests.complete');
         Route::get('/blotter-management', [BlotterController::class, 'index'])->name('blotters');
+        Route::get('/blotter-management/export', [BlotterController::class, 'export'])->name('blotters.export');
         Route::post('/blotters/{blotter}/schedule-mediation', [BlotterController::class, 'scheduleMediation'])->name('blotters.schedule-mediation');
         Route::post('/blotters/{blotter}/vawc-detail', [BlotterController::class, 'storeVawcDetail'])->name('blotters.store-vawc');
         Route::get('/blotters/create', [BlotterController::class, 'create'])->name('blotters.create');
@@ -85,6 +88,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/cases/{id}/resolve', [BlotterController::class, 'resolveCase'])->name('cases.resolve');
         Route::post('/cases/{id}/escalate', [BlotterController::class, 'escalateCase'])->name('cases.escalate');
         Route::get('/reports', [ReportController::class, 'secretaryIndex'])->name('reports');
+        Route::get('/reports/export', [ReportController::class, 'exportSecretary'])->name('reports.export');
         Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])->name('reports.attachment');
         Route::get('/case-history/{id}', [BlotterController::class, 'caseHistory'])->name('case-history');

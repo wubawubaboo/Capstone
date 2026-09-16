@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ReportsExport;
 use App\Http\Controllers\Controller;
 use App\Models\MediationSchedule;
 use App\Models\Report;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Events\SosTriggered;
 use Inertia\Inertia;
 use App\Jobs\SendEmergencySmsJob;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller {
     
@@ -181,6 +183,36 @@ class ReportController extends Controller {
             'reports' => $reports,
             'filters' => $request->only('status')
         ]);
+    }
+
+    public function exportSecretary(Request $request)
+    {
+        $validated = $request->validate([
+            'status' => 'nullable|string',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $query = Report::with('user');
+
+        $query->when($validated['status'] ?? null, function ($q, $status) {
+            return $q->where('status', $status);
+        });
+
+        if (!empty($validated['start_date']) && !empty($validated['end_date'])) {
+            $query->whereBetween('created_at', [
+                $validated['start_date'] . ' 00:00:00',
+                $validated['end_date'] . ' 23:59:59',
+            ]);
+        }
+
+        $reports = $query->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $filename = 'reports-' . ($validated['start_date'] ?? now()->format('Y-m-d')) . '-to-' . ($validated['end_date'] ?? now()->format('Y-m-d')) . '.xlsx';
+
+        return Excel::download(new ReportsExport($reports), $filename);
     }
 
     public function vawcIndex(Request $request)
