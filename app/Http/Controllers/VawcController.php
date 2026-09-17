@@ -8,6 +8,7 @@ use App\Models\VawcDetail;
 use App\Models\User;
 use App\Models\MediationSchedule;
 use App\Models\SystemLog;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -176,6 +177,30 @@ class VawcController extends Controller
         return Inertia::render('VAWC/CaseHistory', [
             'blotter' => $blotter,
         ]);
+    }
+
+    public function downloadCaseReport($id)
+    {
+        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+            ->whereHas('vawcDetail')
+            ->with(['barangay', 'report.user', 'receiver', 'vawcDetail.officer', 'mediations'])
+            ->findOrFail($id);
+
+        $pdf = Pdf::loadView('pdf.case-report', [
+            'blotter'     => $blotter,
+            'generatedBy' => Auth::user()->full_name,
+            'generatedAt' => now(),
+        ]);
+
+        SystemLog::logAction(
+            Auth::user()->barangay_id,
+            Auth::id(),
+            'EXPORT',
+            'Blotter',
+            "Generated confidential VAWC case report PDF for case #{$blotter->case_number}."
+        );
+
+        return $pdf->download("vawc-case-report-{$blotter->case_number}.pdf");
     }
 
     public function mediationCalendar()

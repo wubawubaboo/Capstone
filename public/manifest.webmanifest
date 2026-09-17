@@ -1,0 +1,18 @@
+{
+    "name": "Barangay Resident Portal",
+    "short_name": "Resident",
+    "description": "Log in, register, file reports, and send emergency SOS alerts to your barangay.",
+    "start_url": "/resident/home",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#0a2342",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}

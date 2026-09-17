@@ -93,6 +93,7 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])->name('reports.attachment');
         Route::get('/case-history/{id}', [BlotterController::class, 'caseHistory'])->name('case-history');
+        Route::get('/case-history/{id}/report', [BlotterController::class, 'downloadCaseReport'])->name('case-history.report');
         Route::get('/mediation-calendar', [BlotterController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::get('/mediation-meeting/{id}', [BlotterController::class, 'mediationMeetingDetails'])->name('mediation-meeting-details');
         Route::put('/mediation/{id}/notes', [BlotterController::class, 'updateMediationNotes'])->name('mediation-notes.update');
@@ -129,6 +130,7 @@ Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
         Route::get('/blotters/create', [VawcController::class, 'create'])->name('blotters.create');
         Route::post('/blotters', [VawcController::class, 'store'])->name('blotters.store');
         Route::get('/case-history/{id}', [VawcController::class, 'caseHistory'])->name('case-history');
+        Route::get('/case-history/{id}/report', [VawcController::class, 'downloadCaseReport'])->name('case-history.report');
         Route::get('/mediation-calendar', [VawcController::class, 'mediationCalendar'])->name('mediation-calendar');
         Route::post('/cases/{id}/schedule-mediation', [VawcController::class, 'scheduleMediation'])->name('cases.schedule-mediation');
         Route::put('/mediation/{id}/notes', [VawcController::class, 'updateMediationNotes'])->name('mediation-notes.update');
@@ -151,6 +153,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
         Route::get('/accounts', [AdminController::class, 'accounts'])->name('accounts');
         Route::post('/accounts', [AdminController::class, 'storeAccount'])->name('accounts.store');
+        Route::put('/accounts/{user}', [AdminController::class, 'updateAccount'])->name('accounts.update');
+        Route::delete('/accounts/{user}', [AdminController::class, 'destroyAccount'])->name('accounts.destroy');
         Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('logs');
         Route::resource('barangays', BarangayController::class)->except(['create', 'show', 'edit']);
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

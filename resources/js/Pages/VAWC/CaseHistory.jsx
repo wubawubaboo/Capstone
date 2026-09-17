@@ -81,32 +81,41 @@ export default function CaseHistory({ blotter }) {
                         </h2>
                     </div>
 
-                    {!isCaseClosed && (
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleResolve}
-                                className="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-green-700 transition"
-                            >
-                                Resolve Case
-                            </button>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={route('vawc.case-history.report', blotter.id)}
+                            className="bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-slate-800 transition"
+                        >
+                            Generate Report (PDF)
+                        </a>
 
-                            {mediations.length >= 3 ? (
+                        {!isCaseClosed && (
+                            <>
                                 <button
-                                    onClick={handleEscalate}
-                                    className="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-red-700 transition"
+                                    onClick={handleResolve}
+                                    className="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-green-700 transition"
                                 >
-                                    Escalate to Court
+                                    Resolve Case
                                 </button>
-                            ) : (
-                                <button
-                                    onClick={() => setShowScheduleModal(true)}
-                                    className="bg-[#3B122D] text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-[#280c1e] transition"
-                                >
-                                    + Schedule VAWC Mediation ({mediations.length + 1}/3)
-                                </button>
-                            )}
-                        </div>
-                    )}
+
+                                {mediations.length >= 3 ? (
+                                    <button
+                                        onClick={handleEscalate}
+                                        className="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-red-700 transition"
+                                    >
+                                        Escalate to Court
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowScheduleModal(true)}
+                                        className="bg-[#3B122D] text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-[#280c1e] transition"
+                                    >
+                                        + Schedule VAWC Mediation ({mediations.length + 1}/3)
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* Mediation History */}

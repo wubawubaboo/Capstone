@@ -8,6 +8,7 @@ use App\Models\MediationSchedule;
 use App\Models\Report;
 use App\Models\SystemLog;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -181,6 +182,30 @@ class BlotterController extends Controller
         return Inertia::render('Secretary/CaseHistory', [
             'blotter' => $blotter
         ]);
+    }
+
+    public function downloadCaseReport($id)
+    {
+        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+            ->whereDoesntHave('vawcDetail')
+            ->with(['barangay', 'report.user', 'receiver', 'mediations'])
+            ->findOrFail($id);
+
+        $pdf = Pdf::loadView('pdf.case-report', [
+            'blotter'     => $blotter,
+            'generatedBy' => Auth::user()->full_name,
+            'generatedAt' => now(),
+        ]);
+
+        SystemLog::logAction(
+            Auth::user()->barangay_id,
+            Auth::id(),
+            'EXPORT',
+            'Blotter',
+            "Generated case report PDF for case #{$blotter->case_number}."
+        );
+
+        return $pdf->download("case-report-{$blotter->case_number}.pdf");
     }
 
     public function updateMediationNotes(Request $request, $id)

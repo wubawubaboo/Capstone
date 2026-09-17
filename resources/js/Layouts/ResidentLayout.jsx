@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import ResidentPwaHead from '@/Components/ResidentPwaHead';
 
 export default function ResidentLayout({ children }) {
     // Define navigation items dynamically
@@ -22,8 +23,9 @@ export default function ResidentLayout({ children }) {
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-24 relative font-sans"> 
-            
+        <div className="min-h-screen bg-slate-50 pb-24 relative font-sans">
+            <ResidentPwaHead />
+
             <main>
                 {children}
             </main>

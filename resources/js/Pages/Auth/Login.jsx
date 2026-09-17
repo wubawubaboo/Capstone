@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm, Link } from '@inertiajs/react';
+import ResidentPwaHead from '@/Components/ResidentPwaHead';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
@@ -14,6 +15,7 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+            <ResidentPwaHead />
             <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-200">
                 <h1 className="text-2xl font-bold text-blue-900 mb-6 text-center">Resident Login</h1>
 

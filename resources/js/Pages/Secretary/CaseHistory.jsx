@@ -24,7 +24,6 @@ export default function CaseHistory({ blotter }) {
         });
     };
 
-    // --- Added Handlers ---
     const handleResolve = () => {
         if (confirm('Are you sure you want to mark this case as resolved?')) {
             router.post(route('secretary.cases.resolve', blotter.id));
@@ -36,7 +35,6 @@ export default function CaseHistory({ blotter }) {
             router.post(route('secretary.cases.escalate', blotter.id));
         }
     };
-    // ----------------------
 
     const openMediationDetails = (mediation) => {
         setSelectedMediation(mediation);
@@ -84,32 +82,41 @@ export default function CaseHistory({ blotter }) {
                     </div>
                     
                     {/* --- Updated Action Buttons Section --- */}
-                    {!isCaseClosed && (
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleResolve}
-                                className="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-green-700 transition"
-                            >
-                                Resolve Case
-                            </button>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={route('secretary.case-history.report', blotter.id)}
+                            className="bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-slate-800 transition"
+                        >
+                            Generate Report (PDF)
+                        </a>
 
-                            {mediations.length >= 3 ? (
+                        {!isCaseClosed && (
+                            <>
                                 <button
-                                    onClick={handleEscalate}
-                                    className="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-red-700 transition"
+                                    onClick={handleResolve}
+                                    className="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-green-700 transition"
                                 >
-                                    Escalate to Court
+                                    Resolve Case
                                 </button>
-                            ) : (
-                                <button
-                                    onClick={() => setShowScheduleModal(true)}
-                                    className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-blue-700 transition"
-                                >
-                                    + Schedule Next Mediation ({mediations.length + 1}/3)
-                                </button>
-                            )}
-                        </div>
-                    )}
+
+                                {mediations.length >= 3 ? (
+                                    <button
+                                        onClick={handleEscalate}
+                                        className="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-red-700 transition"
+                                    >
+                                        Escalate to Court
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowScheduleModal(true)}
+                                        className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                                    >
+                                        + Schedule Next Mediation ({mediations.length + 1}/3)
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
                     {/* -------------------------------------- */}
                 </div>
 
