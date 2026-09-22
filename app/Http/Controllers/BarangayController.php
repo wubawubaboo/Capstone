@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Barangay\StoreBarangayRequest;
+use App\Http\Requests\Barangay\UpdateBarangayRequest;
 use App\Models\Barangay;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,27 +20,21 @@ class BarangayController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBarangayRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:barangays',
-            'contact_number' => 'nullable|string|max:255',
-        ]);
+        $barangay = Barangay::create($request->validated());
 
-        Barangay::create($validated);
-        
+        SystemLog::record('CREATE', 'Barangay', "Created barangay \"{$barangay->name}\".", $barangay->id);
+
         return redirect()->back()->with('message', 'Barangay created successfully.');
     }
 
-    public function update(Request $request, Barangay $barangay)
+    public function update(UpdateBarangayRequest $request, Barangay $barangay)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:barangays,name,' . $barangay->id,
-            'contact_number' => 'nullable|string|max:255',
-        ]);
+        $barangay->update($request->validated());
 
-        $barangay->update($validated);
-        
+        SystemLog::record('UPDATE', 'Barangay', "Updated barangay \"{$barangay->name}\".", $barangay->id);
+
         return redirect()->back()->with('message', 'Barangay updated successfully.');
     }
 
@@ -50,8 +47,10 @@ class BarangayController extends Controller
             ]);
         }
 
+        SystemLog::record('DELETE', 'Barangay', "Deleted barangay \"{$barangay->name}\".", $barangay->id);
+
         $barangay->delete();
-        
+
         return redirect()->back()->with('message', 'Barangay deleted successfully.');
     }
 
@@ -66,17 +65,14 @@ class BarangayController extends Controller
         ]);
     }
 
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateBarangayRequest $request)
     {
         $barangay = $request->user()->barangay;
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:barangays,name,' . $barangay->id,
-            'contact_number' => 'nullable|string|max:255',
-        ]);
+        $barangay->update($request->validated());
 
-        $barangay->update($validated);
-        
+        SystemLog::record('UPDATE', 'Barangay', "Updated barangay profile for \"{$barangay->name}\".");
+
         return redirect()->back()->with('message', 'Barangay details updated successfully.');
     }
 }

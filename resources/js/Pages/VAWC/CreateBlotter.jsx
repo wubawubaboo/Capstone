@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import VAWCLayout from '@/Layouts/VAWCLayout';
+import ResidentAutocomplete from '@/Components/ResidentAutocomplete';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function CreateBlotter({ residents = [], pendingReports = [], selectedReportId = '' }) {
+export default function CreateBlotter({ pendingReports = [], selectedReportId = '' }) {
     const [entryType, setEntryType] = useState(selectedReportId ? 'existing' : 'walk-in');
+    const [complainant, setComplainant] = useState(null);
+    const [respondent, setRespondent] = useState(null);
 
     const { data, setData, post, processing, errors } = useForm({
         report_id: selectedReportId || '',
@@ -58,6 +61,7 @@ export default function CreateBlotter({ residents = [], pendingReports = [], sel
                         type="button"
                         onClick={() => {
                             setEntryType('existing');
+                            setComplainant(null);
                             setData((prev) => ({
                                 ...prev,
                                 complainant_id: '',
@@ -124,6 +128,7 @@ export default function CreateBlotter({ residents = [], pendingReports = [], sel
                                             className="sr-only peer"
                                             checked={!data.is_registered_complainant}
                                             onChange={(e) => {
+                                                setComplainant(null);
                                                 setData((prev) => ({
                                                     ...prev,
                                                     is_registered_complainant: !e.target.checked,
@@ -138,21 +143,19 @@ export default function CreateBlotter({ residents = [], pendingReports = [], sel
 
                                 {data.is_registered_complainant ? (
                                     <div>
-                                        <select
-                                            value={data.complainant_id}
-                                            onChange={(e) => setData('complainant_id', e.target.value)}
-                                            className="w-full border-slate-300 rounded-md shadow-xs p-2.5 border text-sm focus:ring-rose-800 focus:border-rose-800"
-                                        >
-                                            <option value="">-- Select Registered Resident --</option>
-                                            {residents.map((res) => (
-                                                <option key={res.id} value={res.id}>
-                                                    {res.full_name} - {res.address || 'No address on file'}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.complainant_id && (
-                                            <p className="text-red-600 text-xs mt-1 font-medium">{errors.complainant_id}</p>
-                                        )}
+                                        <ResidentAutocomplete
+                                            searchUrl={route('vawc.residents.search')}
+                                            selectedLabel={complainant?.full_name}
+                                            onSelect={(resident) => {
+                                                setComplainant(resident);
+                                                setData('complainant_id', resident.id);
+                                            }}
+                                            onClear={() => {
+                                                setComplainant(null);
+                                                setData('complainant_id', '');
+                                            }}
+                                            error={errors.complainant_id}
+                                        />
                                     </div>
                                 ) : (
                                     <div>
@@ -185,6 +188,7 @@ export default function CreateBlotter({ residents = [], pendingReports = [], sel
                                     className="sr-only peer"
                                     checked={!data.is_registered_respondent}
                                     onChange={(e) => {
+                                        setRespondent(null);
                                         setData((prev) => ({
                                             ...prev,
                                             is_registered_respondent: !e.target.checked,
@@ -199,21 +203,19 @@ export default function CreateBlotter({ residents = [], pendingReports = [], sel
 
                         {data.is_registered_respondent ? (
                             <div>
-                                <select
-                                    value={data.receiver_id}
-                                    onChange={(e) => setData('receiver_id', e.target.value)}
-                                    className="w-full border-slate-300 rounded-md shadow-xs p-2.5 border text-sm focus:ring-rose-800 focus:border-rose-800"
-                                >
-                                    <option value="">-- Select Registered Resident --</option>
-                                    {residents.map((res) => (
-                                        <option key={res.id} value={res.id}>
-                                            {res.full_name} - {res.address || 'No address on file'}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.receiver_id && (
-                                    <p className="text-red-600 text-xs mt-1 font-medium">{errors.receiver_id}</p>
-                                )}
+                                <ResidentAutocomplete
+                                    searchUrl={route('vawc.residents.search')}
+                                    selectedLabel={respondent?.full_name}
+                                    onSelect={(resident) => {
+                                        setRespondent(resident);
+                                        setData('receiver_id', resident.id);
+                                    }}
+                                    onClear={() => {
+                                        setRespondent(null);
+                                        setData('receiver_id', '');
+                                    }}
+                                    error={errors.receiver_id}
+                                />
                             </div>
                         ) : (
                             <div>

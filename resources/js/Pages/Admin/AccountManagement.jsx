@@ -8,6 +8,7 @@ const emptyForm = {
     barangay_id: '',
     role: 'secretary',
     password: '',
+    password_confirmation: '',
     address: '',
     date_of_birth: '',
     start_of_residency: '',
@@ -29,6 +30,7 @@ export default function AccountManagement({ staffAccounts, barangays }) {
             barangay_id: account.barangay_id ?? '',
             role: account.role,
             password: '',
+            password_confirmation: '',
             address: account.address ?? '',
             date_of_birth: account.date_of_birth ? account.date_of_birth.substring(0, 10) : '',
             start_of_residency: account.start_of_residency ?? '',
@@ -159,7 +161,7 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                                 required
                             >
                                 <option value="secretary">Barangay Secretary</option>
-                                <option value="vawc_officer">VAWC Officer</option>
+                                <option value="vawc">VAWC Officer</option>
                                 <option value="admin">Administrator</option>
                             </select>
                             {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
@@ -197,6 +199,18 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                                 required={!isEditing}
                             />
                             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+                            <input
+                                type="password"
+                                className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-colors"
+                                value={data.password_confirmation}
+                                onChange={e => setData('password_confirmation', e.target.value)}
+                                required={!isEditing && data.password !== ''}
+                            />
+                            {errors.password_confirmation && <p className="text-red-500 text-xs mt-1">{errors.password_confirmation}</p>}
                         </div>
 
                         <div className="pt-2 flex items-center gap-3">

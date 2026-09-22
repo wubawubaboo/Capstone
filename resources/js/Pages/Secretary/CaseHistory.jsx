@@ -4,14 +4,19 @@ import SecretaryLayout from '@/Layouts/SecretaryLayout';
 
 export default function CaseHistory({ blotter }) {
     const [showScheduleModal, setShowScheduleModal] = useState(false);
+    const [showReopenModal, setShowReopenModal] = useState(false);
     const [selectedMediation, setSelectedMediation] = useState(null);
     const mediations = blotter?.mediations || [];
+    const statusHistory = blotter?.status_history || [];
 
     const { data, setData, post, processing, reset, errors } = useForm({
         scheduled_date: '',
     });
     const notesForm = useForm({
         notes: '',
+    });
+    const reopenForm = useForm({
+        reason: '',
     });
 
     const handleSchedule = (e) => {
@@ -34,6 +39,16 @@ export default function CaseHistory({ blotter }) {
         if (confirm('Are you sure you want to escalate this case to court?')) {
             router.post(route('secretary.cases.escalate', blotter.id));
         }
+    };
+
+    const handleReopen = (e) => {
+        e.preventDefault();
+        reopenForm.post(route('secretary.cases.reopen', blotter.id), {
+            onSuccess: () => {
+                reopenForm.reset();
+                setShowReopenModal(false);
+            },
+        });
     };
 
     const openMediationDetails = (mediation) => {
@@ -116,6 +131,15 @@ export default function CaseHistory({ blotter }) {
                                 )}
                             </>
                         )}
+
+                        {isCaseClosed && (
+                            <button
+                                onClick={() => setShowReopenModal(true)}
+                                className="bg-amber-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-amber-700 transition"
+                            >
+                                Reopen Case
+                            </button>
+                        )}
                     </div>
                     {/* -------------------------------------- */}
                 </div>
@@ -149,7 +173,70 @@ export default function CaseHistory({ blotter }) {
                         <p className="text-xs text-slate-400 italic">No mediation hearings scheduled yet.</p>
                     )}
                 </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
+                    <h3 className="text-base font-bold text-slate-800">Case Timeline</h3>
+                    {statusHistory.length > 0 ? (
+                        <ol className="space-y-3">
+                            {statusHistory.map((entry) => (
+                                <li key={entry.id} className="flex gap-3 text-xs border-l-2 border-blue-200 pl-3">
+                                    <div className="flex-1">
+                                        <p className="font-bold text-slate-800">
+                                            {entry.from_status ? `${entry.from_status} → ${entry.to_status}` : `Filed as ${entry.to_status}`}
+                                        </p>
+                                        {entry.note && <p className="text-slate-500 mt-0.5">{entry.note}</p>}
+                                        <p className="text-slate-400 mt-0.5">
+                                            {new Date(entry.created_at).toLocaleString()}
+                                            {entry.actor?.full_name ? ` · ${entry.actor.full_name}` : ''}
+                                        </p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                    ) : (
+                        <p className="text-xs text-slate-400 italic">No status changes recorded yet.</p>
+                    )}
+                </div>
             </div>
+
+            {/* Reopen Modal */}
+            {showReopenModal && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 max-w-sm w-full p-6 space-y-4">
+                        <h4 className="text-base font-bold text-slate-800">Reopen Case #{blotter.case_number}</h4>
+                        <form onSubmit={handleReopen} className="space-y-3">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Reason for reopening</label>
+                                <textarea
+                                    value={reopenForm.data.reason}
+                                    onChange={(e) => reopenForm.setData('reason', e.target.value)}
+                                    rows="4"
+                                    maxLength="500"
+                                    className="w-full border border-slate-300 rounded-md p-2 text-xs"
+                                    required
+                                />
+                                {reopenForm.errors.reason && <p className="text-red-600 text-xs mt-1">{reopenForm.errors.reason}</p>}
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowReopenModal(false)}
+                                    className="px-3 py-1.5 rounded text-xs font-bold text-slate-600 hover:bg-slate-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={reopenForm.processing}
+                                    className="bg-amber-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-amber-700 disabled:opacity-50"
+                                >
+                                    Reopen Case
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Schedule Modal */}
             {showScheduleModal && (

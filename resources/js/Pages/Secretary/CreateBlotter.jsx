@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
+import ResidentAutocomplete from '@/Components/ResidentAutocomplete';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function CreateBlotter({ pendingReports, residents }) {
-    
+export default function CreateBlotter({ pendingReports }) {
+
     const queryParams = new URLSearchParams(window.location.search);
     const initialReportId = queryParams.get('report_id') || '';
 
     const [entryType, setEntryType] = useState(initialReportId ? 'existing' : 'walk-in');
+    const [complainant, setComplainant] = useState(null);
+    const [respondent, setRespondent] = useState(null);
 
     const { data, setData, post, processing, errors } = useForm({
         report_id: initialReportId,
@@ -49,11 +52,12 @@ export default function CreateBlotter({ pendingReports, residents }) {
                 </div>
 
                 <div className="flex gap-4 mb-6">
-                    <button 
-                        type="button" 
-                        onClick={() => { 
-                            setEntryType('existing'); 
-                            setData(prev => ({ ...prev, complainant_id: '', incident_type: '', description: '' })); 
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setEntryType('existing');
+                            setComplainant(null);
+                            setData(prev => ({ ...prev, complainant_id: '', incident_type: '', description: '' }));
                         }}
                         className={`px-4 py-2 rounded text-sm font-bold transition-colors ${entryType === 'existing' ? 'bg-[#0a2342] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
@@ -108,15 +112,19 @@ export default function CreateBlotter({ pendingReports, residents }) {
                                 <div className="space-y-4 bg-slate-50 p-4 rounded border border-slate-100">
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 mb-2">Complainant (Resident)</label>
-                                        <select 
-                                            value={data.complainant_id} 
-                                            onChange={e => setData('complainant_id', e.target.value)}
-                                            className="w-full border-slate-300 rounded shadow-sm p-2.5 text-sm focus:ring-[#0a2342]"
-                                        >
-                                            <option value="">-- Select Complainant --</option>
-                                            {residents?.map(res => <option key={res.id} value={res.id}>{res.full_name}</option>)}
-                                        </select>
-                                        {errors.complainant_id && <div className="text-red-500 text-xs mt-1">{errors.complainant_id}</div>}
+                                        <ResidentAutocomplete
+                                            searchUrl={route('secretary.residents.search')}
+                                            selectedLabel={complainant?.full_name}
+                                            onSelect={(resident) => {
+                                                setComplainant(resident);
+                                                setData('complainant_id', resident.id);
+                                            }}
+                                            onClear={() => {
+                                                setComplainant(null);
+                                                setData('complainant_id', '');
+                                            }}
+                                            error={errors.complainant_id}
+                                        />
                                     </div>
                                     
                                     <div>
@@ -156,8 +164,9 @@ export default function CreateBlotter({ pendingReports, residents }) {
                                         className="sr-only peer"
                                         checked={!data.is_registered_respondent}
                                         onChange={(e) => {
+                                            setRespondent(null);
                                             setData(prev => ({
-                                                ...prev, 
+                                                ...prev,
                                                 is_registered_respondent: !e.target.checked,
                                                 receiver_id: '',
                                                 receiver_name: ''
@@ -171,17 +180,19 @@ export default function CreateBlotter({ pendingReports, residents }) {
                             {data.is_registered_respondent ? (
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Select Registered Resident</label>
-                                    <select 
-                                        value={data.receiver_id} 
-                                        onChange={e => setData('receiver_id', e.target.value)}
-                                        className="w-full border-slate-300 rounded shadow-sm p-2.5 text-sm focus:ring-[#0a2342]"
-                                    >
-                                        <option value="">-- Select Registered Respondent --</option>
-                                        {residents?.map(res => (
-                                            <option key={res.id} value={res.id}>{res.full_name}</option>
-                                        ))}
-                                    </select>
-                                    {errors.receiver_id && <div className="text-red-500 text-xs mt-1">{errors.receiver_id}</div>}
+                                    <ResidentAutocomplete
+                                        searchUrl={route('secretary.residents.search')}
+                                        selectedLabel={respondent?.full_name}
+                                        onSelect={(resident) => {
+                                            setRespondent(resident);
+                                            setData('receiver_id', resident.id);
+                                        }}
+                                        onClear={() => {
+                                            setRespondent(null);
+                                            setData('receiver_id', '');
+                                        }}
+                                        error={errors.receiver_id}
+                                    />
                                 </div>
                             ) : (
                                 <div>

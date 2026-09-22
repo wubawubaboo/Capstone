@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exports\DocumentRequestsExport;
 use App\Models\DocumentRequest;
+use App\Models\DocumentType;
 use App\Models\SystemLog;
+use App\Services\DocumentGeneration\DocumentGenerationService;
 use App\Services\PhilSmsService;
+use App\Support\DocumentFieldCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -13,19 +16,29 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DocumentRequestController extends Controller
 {
+    public function create()
+    {
+        return Inertia::render('Resident/DocumentRequest', [
+            'documentTypes' => DocumentType::where('is_active', true)->orderBy('name')->get(),
+        ]);
+    }
+
     public function index(Request $request)
     {
-        $query = DocumentRequest::with(['requester', 'documentType']);
+        $query = DocumentRequest::forBarangay(Auth::user()->barangay_id)
+            ->with(['requester', 'documentType']);
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
         });
 
-        $requests = $query->latest()->paginate(15)->withQueryString();
+        $requests = $query->latest()->paginate(self::PER_PAGE)->withQueryString();
 
         return Inertia::render('Secretary/DocumentRequests', [
             'requests' => $requests,
             'filters' => $request->only('status'),
+            'documentTypes' => DocumentType::withCount('requests')->orderBy('name')->get(),
+            'fieldCatalog' => DocumentFieldCatalog::fields(),
         ]);
     }
 
@@ -37,7 +50,8 @@ class DocumentRequestController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $query = DocumentRequest::with(['requester', 'documentType']);
+        $query = DocumentRequest::forBarangay(Auth::user()->barangay_id)
+            ->with(['requester', 'documentType']);
 
         $query->when($validated['status'] ?? null, function ($q, $status) {
             return $q->where('status', $status);
@@ -77,6 +91,8 @@ class DocumentRequestController extends Controller
 
     public function updateStatus(Request $request, DocumentRequest $documentRequest)
     {
+        abort_unless($documentRequest->barangay_id === Auth::user()->barangay_id, 404);
+
         $validated = $request->validate(['status' => 'required|in:Ready,Claimed']);
 
         if ($validated['status'] === 'Ready') $documentRequest->markAsReady();
@@ -89,6 +105,8 @@ class DocumentRequestController extends Controller
 
     public function markAsReady(DocumentRequest $documentRequest, PhilSmsService $smsService)
     {
+        abort_unless($documentRequest->barangay_id === Auth::user()->barangay_id, 404);
+
         $documentRequest->update(['status' => 'ready_for_pickup']);
 
         $documentName = $documentRequest->documentType->name;
@@ -99,5 +117,22 @@ class DocumentRequestController extends Controller
         $smsService->sendSms($documentRequest->user->phone_number, $message);
 
         return back()->with('success', 'Document marked as ready and SMS sent to the resident.');
+    }
+
+    public function generate(DocumentRequest $documentRequest, DocumentGenerationService $service)
+    {
+        abort_unless($documentRequest->barangay_id === Auth::user()->barangay_id, 404);
+
+        $documentRequest->load(['requester', 'barangay', 'documentType']);
+
+        abort_unless($documentRequest->documentType?->hasTemplate(), 422, 'This document type has no template configured.');
+
+        $pdfPath = $service->generate($documentRequest);
+
+        SystemLog::logAction($documentRequest->barangay_id, Auth::id(), 'EXPORT', 'Documents', "Generated document PDF for Doc Ref #{$documentRequest->reference_no}.");
+
+        $filename = $documentRequest->documentType->name . '-' . $documentRequest->reference_no . '.pdf';
+
+        return response()->download($pdfPath, $filename)->deleteFileAfterSend(true);
     }
 }

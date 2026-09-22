@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class SystemLog extends Model
 {
@@ -26,5 +27,23 @@ class SystemLog extends Model
             'description' => $description,
             'ip_address'  => $ip ?? request()->ip(),
         ]);
+    }
+
+    /**
+     * Convenience wrapper around logAction() for the common case: the acting
+     * user is the authenticated user, and the log entry belongs to their own
+     * barangay. Pass $barangayId explicitly when logging an action that
+     * targets a different barangay than the actor's own (e.g. an admin
+     * managing a specific barangay's resources).
+     */
+    public static function record(string $actionType, string $module, string $description, ?int $barangayId = null)
+    {
+        return static::logAction(
+            $barangayId ?? Auth::user()?->barangay_id,
+            Auth::id(),
+            $actionType,
+            $module,
+            $description
+        );
     }
 }

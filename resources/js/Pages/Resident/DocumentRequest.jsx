@@ -90,7 +90,7 @@ export default function DocumentRequest({ documentTypes = [] }) {
                                     {/* Dynamically populated from the database */}
                                     {documentTypes.map(doc => (
                                         <option key={doc.id} value={doc.id}>
-                                            {doc.name} (Fee: ₱{doc.base_fee || '0.00'})
+                                            {doc.name} {doc.base_fee !== null ? `(Fee: ₱${doc.base_fee})` : '(Free)'}
                                         </option>
                                     ))}
                                 </select>

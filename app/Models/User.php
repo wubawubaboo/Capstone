@@ -57,8 +57,6 @@ class User extends Authenticatable
         ];
     }
 
-    protected $guarded = [];
-
     // Relationships
     public function barangay() { return $this->belongsTo(Barangay::class); }
     public function reports() { return $this->hasMany(Report::class, 'reporter_id'); }
@@ -68,6 +66,17 @@ class User extends Authenticatable
     public function handledVawcCases() { return $this->hasMany(VawcDetail::class, 'officer_in_charge_id'); }
     public function systemLogs() { return $this->hasMany(SystemLog::class, 'actor_id'); }
     public function attachments() { return $this->hasMany(Attachment::class, 'uploaded_by'); }
+
+    // Computed
+    public function getAge(): ?int
+    {
+        return $this->date_of_birth?->age;
+    }
+
+    public function getYearsOfResidency(): ?int
+    {
+        return $this->start_of_residency ? now()->year - $this->start_of_residency : null;
+    }
 
     // Role Checks
     public function isRole($role) { return $this->role === $role; }

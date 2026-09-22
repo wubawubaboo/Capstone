@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\ServiceRequestsExport;
 use App\Models\ServiceRequest;
 use App\Models\BarangayAsset;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -14,13 +15,14 @@ class ServiceRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ServiceRequest::with(['requester', 'asset']);
+        $query = ServiceRequest::forBarangay(Auth::user()->barangay_id)
+            ->with(['requester', 'asset']);
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
         });
 
-        $serviceRequests = $query->latest()->paginate(15)->withQueryString();
+        $serviceRequests = $query->latest()->paginate(self::PER_PAGE)->withQueryString();
         
         $availableAssets = BarangayAsset::where('is_available', true)
                             ->where('barangay_id', Auth::user()->barangay_id)
@@ -41,7 +43,8 @@ class ServiceRequestController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $query = ServiceRequest::with(['requester', 'asset']);
+        $query = ServiceRequest::forBarangay(Auth::user()->barangay_id)
+            ->with(['requester', 'asset']);
 
         $query->when($validated['status'] ?? null, function ($q, $status) {
             return $q->where('status', $status);
@@ -65,7 +68,7 @@ class ServiceRequestController extends Controller
     {
         $validated = $request->validate([
             'service_type' => 'required|string',
-            'description'  => 'required|string',
+            'description' => 'required|string',
         ]);
 
         /** @var \App\Models\User $user */
@@ -84,12 +87,15 @@ class ServiceRequestController extends Controller
 
     public function assignAsset(Request $request, ServiceRequest $serviceRequest)
     {
+        abort_unless($serviceRequest->barangay_id === Auth::user()->barangay_id, 404);
+
         $validated = $request->validate([
-            'asset_id' => 'required|exists:barangay_assets,id'
+            'asset_id' => 'required|exists:barangay_assets,id',
         ]);
 
-        $asset = BarangayAsset::findOrFail($validated['asset_id']);
-        
+        $asset = BarangayAsset::where('barangay_id', Auth::user()->barangay_id)
+            ->findOrFail($validated['asset_id']);
+
         if (!$asset->is_available) {
             return back()->withErrors(['asset_id' => 'This asset is currently deployed.']);
         }
@@ -101,11 +107,15 @@ class ServiceRequestController extends Controller
 
         $asset->update(['is_available' => false]);
 
+        SystemLog::record('UPDATE', 'Service Request', "Dispatched asset \"{$asset->asset_name}\" for service request #{$serviceRequest->id}.");
+
         return back()->with('success', "{$asset->asset_name} dispatched.");
     }
 
     public function complete(ServiceRequest $serviceRequest)
     {
+        abort_unless($serviceRequest->barangay_id === Auth::user()->barangay_id, 404);
+
         $serviceRequest->update(['status' => 'Completed']);
 
         if ($serviceRequest->assigned_asset_id) {
@@ -114,6 +124,8 @@ class ServiceRequestController extends Controller
                 $asset->update(['is_available' => true]);
             }
         }
+
+        SystemLog::record('UPDATE', 'Service Request', "Completed service request #{$serviceRequest->id}.");
 
         return back()->with('success', 'Service marked as completed and asset returned.');
     }

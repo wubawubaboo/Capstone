@@ -40,4 +40,12 @@ return [
         'sender_id' => env('PHILSMS_SENDER_ID', 'PhilSMS'),
     ],
 
+    'libreoffice' => [
+        // Path/command for the LibreOffice CLI used to convert merged .docx
+        // document-type templates to PDF with full layout fidelity (floating
+        // images, headers, etc.) that PhpWord's own PDF writer can't render.
+        'binary' => env('LIBREOFFICE_BINARY', 'soffice'),
+        'timeout' => env('LIBREOFFICE_TIMEOUT', 120),
+    ],
+
 ];

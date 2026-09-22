@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm, Link } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 
 export default function StaffLogin() {
     const { data, setData, post, processing, errors } = useForm({
@@ -50,14 +50,6 @@ export default function StaffLogin() {
                         Login
                     </button>
                 </form>
-                <div className="mt-6 text-center text-xs">
-                    <p className="text-slate-400">
-                        Register Staff Account{' '}
-                        <Link href={route('staff.register')} className="text-blue-400 font-bold hover:underline">
-                            Register
-                        </Link>
-                    </p>
-                </div>
             </div>
         </div>
     );

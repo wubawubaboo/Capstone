@@ -12,6 +12,13 @@ class VawcDetail extends Model
 
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'confidential_notes' => 'encrypted',
+        ];
+    }
+
     public function blotter() { return $this->belongsTo(BlotterRecord::class, 'blotter_record_id'); }
     public function officer() { return $this->belongsTo(User::class, 'officer_in_charge_id'); }
 

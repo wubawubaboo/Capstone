@@ -7,6 +7,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlotterController;
 use App\Http\Controllers\DocumentRequestController;
+use App\Http\Controllers\DocumentTypeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\VawcController;
@@ -35,9 +36,6 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/portal/secure-login', [AuthController::class, 'showStaffLogin'])->name('staff.login');
 Route::post('/portal/secure-login', [AuthController::class, 'staffLogin']);
 
-Route::get('/portal/secure-register', [AuthController::class, 'showStaffRegistration'])->name('staff.register');
-Route::post('/portal/secure-register', [AuthController::class, 'staffRegister']);
-
 Route::middleware('auth')->prefix('resident')->name('resident.')->group(function () {
     
     Route::group(['middleware' => function ($request, $next) {
@@ -52,7 +50,7 @@ Route::middleware('auth')->prefix('resident')->name('resident.')->group(function
         Route::get('/emergency-report', function () {return Inertia::render('Resident/EmergencyReport');})->name('reports.create');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
         Route::post('/sos-trigger', [ReportController::class, 'storeEmergency'])->name('sos.trigger');
-        Route::get('/document-request', function () {return Inertia::render('Resident/DocumentRequest');})->name('documents.create');
+        Route::get('/document-request', [DocumentRequestController::class, 'create'])->name('documents.create');
         Route::post('/document-request', [DocumentRequestController::class, 'store'])->name('documents.store');
         Route::get('/service-request', function () {return Inertia::render('Resident/ServiceRequest');})->name('services.create');
         Route::post('/service-request', [ServiceRequestController::class, 'store'])->name('services.store');
@@ -76,6 +74,14 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::get('/document-requests', [DocumentRequestController::class, 'index'])->name('document-requests');
         Route::get('/document-requests/export', [DocumentRequestController::class, 'export'])->name('document-requests.export');
         Route::post('/document-requests/{documentRequest}/status', [DocumentRequestController::class, 'updateStatus'])->name('document-requests.update-status');
+        Route::get('/document-requests/{documentRequest}/generate', [DocumentRequestController::class, 'generate'])->name('document-requests.generate');
+        Route::post('/document-types', [DocumentTypeController::class, 'store'])->name('document-types.store');
+        Route::put('/document-types/{documentType}', [DocumentTypeController::class, 'update'])->name('document-types.update');
+        Route::delete('/document-types/{documentType}', [DocumentTypeController::class, 'destroy'])->name('document-types.destroy');
+        Route::post('/document-types/{documentType}/toggle-active', [DocumentTypeController::class, 'toggleActive'])->name('document-types.toggle-active');
+        Route::put('/document-types/{documentType}/field-positions', [DocumentTypeController::class, 'updateFieldPositions'])->name('document-types.field-positions');
+        Route::get('/document-types/{documentType}/template-file', [DocumentTypeController::class, 'showTemplateFile'])->name('document-types.template-file');
+        Route::delete('/document-types/{documentType}/template', [DocumentTypeController::class, 'destroyTemplate'])->name('document-types.destroy-template');
         Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests');
         Route::get('/service-requests/export', [ServiceRequestController::class, 'export'])->name('service-requests.export');
         Route::post('/service-requests/{serviceRequest}/assign', [ServiceRequestController::class, 'assignAsset'])->name('service-requests.assign');
@@ -86,8 +92,10 @@ Route::middleware('auth')->prefix('secretary')->name('secretary.')->group(functi
         Route::post('/blotters/{blotter}/vawc-detail', [BlotterController::class, 'storeVawcDetail'])->name('blotters.store-vawc');
         Route::get('/blotters/create', [BlotterController::class, 'create'])->name('blotters.create');
         Route::post('/blotters', [BlotterController::class, 'store'])->name('blotters.store');
+        Route::get('/residents/search', [BlotterController::class, 'searchResidents'])->name('residents.search');
         Route::post('/cases/{id}/resolve', [BlotterController::class, 'resolveCase'])->name('cases.resolve');
         Route::post('/cases/{id}/escalate', [BlotterController::class, 'escalateCase'])->name('cases.escalate');
+        Route::post('/cases/{id}/reopen', [BlotterController::class, 'reopenCase'])->name('cases.reopen');
         Route::get('/reports', [ReportController::class, 'secretaryIndex'])->name('reports');
         Route::get('/reports/export', [ReportController::class, 'exportSecretary'])->name('reports.export');
         Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
@@ -129,6 +137,7 @@ Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
         Route::get('/blotter-management', [VawcController::class, 'index'])->name('blotters');
         Route::get('/blotters/create', [VawcController::class, 'create'])->name('blotters.create');
         Route::post('/blotters', [VawcController::class, 'store'])->name('blotters.store');
+        Route::get('/residents/search', [VawcController::class, 'searchResidents'])->name('residents.search');
         Route::get('/case-history/{id}', [VawcController::class, 'caseHistory'])->name('case-history');
         Route::get('/case-history/{id}/report', [VawcController::class, 'downloadCaseReport'])->name('case-history.report');
         Route::get('/mediation-calendar', [VawcController::class, 'mediationCalendar'])->name('mediation-calendar');
@@ -136,6 +145,7 @@ Route::middleware('auth')->prefix('vawc')->name('vawc.')->group(function () {
         Route::put('/mediation/{id}/notes', [VawcController::class, 'updateMediationNotes'])->name('mediation-notes.update');
         Route::post('/cases/{id}/resolve', [VawcController::class, 'resolveCase'])->name('cases.resolve');
         Route::post('/cases/{id}/escalate', [VawcController::class, 'escalateCase'])->name('cases.escalate');
+        Route::post('/cases/{id}/reopen', [VawcController::class, 'reopenCase'])->name('cases.reopen');
         Route::get('/reports', [ReportController::class, 'vawcIndex'])->name('reports');
         Route::put('/reports/{report}/update-status', [ReportController::class, 'updateStatus'])->name('reports.update-status');
         Route::get('/reports/{report}/attachment', [ReportController::class, 'showAttachment'])->name('reports.attachment');

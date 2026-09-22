@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use App\Http\Requests\Admin\StoreStaffAccountRequest;
+use App\Http\Requests\Admin\UpdateStaffAccountRequest;
 use App\Models\User;
 use App\Models\SystemLog;
 use App\Models\Report;
@@ -25,7 +27,7 @@ class AdminController extends Controller
     }
 
     /** Roles manageable from the admin Account Management page. */
-    private const MANAGEABLE_ROLES = ['secretary', 'vawc_officer', 'admin'];
+    private const MANAGEABLE_ROLES = ['secretary', 'vawc', 'admin'];
 
     public function accounts()
     {
@@ -38,18 +40,9 @@ class AdminController extends Controller
         ]);
     }
 
-    public function storeAccount(Request $request)
+    public function storeAccount(StoreStaffAccountRequest $request)
     {
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone_number' => 'required|string|unique:users,phone_number',
-            'barangay_id' => 'nullable|required_unless:role,admin|exists:barangays,id',
-            'role' => 'required|in:secretary,vawc_officer,admin',
-            'password' => 'required|min:8',
-            'address' => 'required|string|max:255',
-            'date_of_birth' => 'required|date',
-            'start_of_residency' => 'required|integer|min:1900|max:' . date('Y'),
-        ]);
+        $validated = $request->validated();
 
         $account = User::create([
             'full_name' => $validated['full_name'],
@@ -74,20 +67,11 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Administrative account created successfully.');
     }
 
-    public function updateAccount(Request $request, User $user)
+    public function updateAccount(UpdateStaffAccountRequest $request, User $user)
     {
         abort_unless(in_array($user->role, self::MANAGEABLE_ROLES), 404);
 
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone_number' => 'required|string|unique:users,phone_number,' . $user->id,
-            'barangay_id' => 'nullable|required_unless:role,admin|exists:barangays,id',
-            'role' => 'required|in:secretary,vawc_officer,admin',
-            'password' => 'nullable|min:8',
-            'address' => 'required|string|max:255',
-            'date_of_birth' => 'required|date',
-            'start_of_residency' => 'required|integer|min:1900|max:' . date('Y'),
-        ]);
+        $validated = $request->validated();
 
         $updates = [
             'full_name' => $validated['full_name'],
@@ -142,7 +126,7 @@ class AdminController extends Controller
 
     public function auditLogs()
     {
-        $logs = SystemLog::with('user')->latest()->paginate(50);
+        $logs = SystemLog::with('actor')->latest()->paginate(self::PER_PAGE);
         
         return Inertia::render('Admin/AuditLogs', [
             'logs' => $logs

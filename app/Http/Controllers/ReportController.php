@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Exports\ReportsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Report\StoreReportRequest;
 use App\Models\MediationSchedule;
 use App\Models\Report;
+use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\OpenStreetMapService;
 use App\Services\PhilSmsService;
@@ -19,15 +21,9 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller {
     
-    public function store(Request $request) 
+    public function store(StoreReportRequest $request)
     {
-        $validated = $request->validate([
-            'incident_type' => 'required|string|max:255',
-            'description' => 'required|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'attachment' => 'nullable|image|max:2048',
-        ]);
+        $validated = $request->validated();
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
@@ -49,7 +45,12 @@ class ReportController extends Controller {
 
     public function showAttachment(Report $report)
     {
-        if (Auth::id() !== $report->user_id && !in_array(Auth::user()->role, ['secretary', 'vawc'])) {
+        $isOwner = Auth::id() === $report->user_id;
+        $isStaffForBarangay = in_array(Auth::user()->role, ['secretary', 'vawc'])
+            && $report->user
+            && $report->user->barangay_id === Auth::user()->barangay_id;
+
+        if (!$isOwner && !$isStaffForBarangay) {
             abort(403, 'Unauthorized to view this evidence.');
         }
 
@@ -168,7 +169,10 @@ class ReportController extends Controller {
 
     public function secretaryIndex(Request $request)
     {
-        $query = Report::with('user');
+        $barangayId = Auth::user()->barangay_id;
+
+        $query = Report::with('user')
+            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId));
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
@@ -176,7 +180,7 @@ class ReportController extends Controller {
 
         $reports = $query->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
             ->orderBy('created_at', 'desc')
-            ->paginate(15)
+            ->paginate(self::PER_PAGE)
             ->withQueryString();
 
         return Inertia::render('Secretary/Reports', [
@@ -193,7 +197,10 @@ class ReportController extends Controller {
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $query = Report::with('user');
+        $barangayId = Auth::user()->barangay_id;
+
+        $query = Report::with('user')
+            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId));
 
         $query->when($validated['status'] ?? null, function ($q, $status) {
             return $q->where('status', $status);
@@ -217,7 +224,10 @@ class ReportController extends Controller {
 
     public function vawcIndex(Request $request)
     {
-        $query = Report::with('user');
+        $barangayId = Auth::user()->barangay_id;
+
+        $query = Report::with('user')
+            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId));
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
@@ -225,7 +235,7 @@ class ReportController extends Controller {
 
         $reports = $query->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
             ->orderBy('created_at', 'desc')
-            ->paginate(15)
+            ->paginate(self::PER_PAGE)
             ->withQueryString();
 
         return Inertia::render('VAWC/Reports', [
@@ -236,12 +246,16 @@ class ReportController extends Controller {
 
     public function updateStatus(Request $request, Report $report)
     {
+        abort_unless($report->user && $report->user->barangay_id === Auth::user()->barangay_id, 404);
+
         $validated = $request->validate([
             'status' => 'required|in:pending,in_progress,completed'
         ]);
 
         $report->update(['status' => $validated['status']]);
-        
+
+        SystemLog::record('UPDATE', 'Report', "Updated Report #{$report->id} status to {$validated['status']}.", $report->user->barangay_id);
+
         return back()->with('success', 'Report status updated successfully.');
     }
 }

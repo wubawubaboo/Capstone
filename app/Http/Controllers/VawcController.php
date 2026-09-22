@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BlotterStatus;
+use App\Http\Requests\Blotter\ReopenCaseRequest;
+use App\Http\Requests\Blotter\ScheduleMediationRequest;
+use App\Http\Requests\Blotter\UpdateMediationNotesRequest;
+use App\Http\Requests\Vawc\StoreVawcBlotterRequest;
 use App\Models\BlotterRecord;
 use App\Models\Report;
 use App\Models\VawcDetail;
@@ -22,7 +27,7 @@ class VawcController extends Controller
             ->whereHas('vawcDetail')
             ->with(['report.user', 'receiver', 'vawcDetail'])
             ->latest()
-            ->paginate(10);
+            ->paginate(self::PER_PAGE);
 
         return Inertia::render('VAWC/BlotterManagement', [
             'blotters' => $vawcBlotters,
@@ -31,42 +36,42 @@ class VawcController extends Controller
 
     public function create(Request $request)
     {
-        // MODIFIED: Included 'address', 'date_of_birth', and 'start_of_residency'
-        // to ensure the frontend receives these new fields for context.
-        $residents = User::where('barangay_id', Auth::user()->barangay_id)
-            ->where('role', 'resident')
-            ->select('id', 'full_name', 'phone_number', 'address', 'date_of_birth', 'start_of_residency')
-            ->get();
-
         $pendingReports = Report::with('user')
             ->whereDoesntHave('blotter')
             ->whereIn('status', ['Pending', 'pending', 'in_progress'])
+            ->whereHas('user', fn ($q) => $q->where('barangay_id', Auth::user()->barangay_id))
             ->get();
 
         return Inertia::render('VAWC/CreateBlotter', [
-            'residents' => $residents,
             'pendingReports' => $pendingReports,
             'selectedReportId' => $request->query('report_id', ''),
         ]);
     }
 
-    public function store(Request $request)
+    public function searchResidents(Request $request)
     {
-        $validated = $request->validate([
-            'report_id'                 => 'nullable|exists:reports,id',
+        $query = trim((string) $request->query('q', ''));
 
-            'is_registered_complainant' => 'required|boolean',
-            'complainant_id'            => 'nullable|required_if:is_registered_complainant,true,1|exists:users,id',
-            'complainant_name'          => 'nullable|required_if:is_registered_complainant,false,0|string|max:255',
+        if (mb_strlen($query) < 2) {
+            return response()->json([]);
+        }
 
-            'is_registered_respondent'  => 'required|boolean',
-            'receiver_id'               => 'nullable|required_if:is_registered_respondent,true,1|exists:users,id',
-            'receiver_name'             => 'nullable|required_if:is_registered_respondent,false,0|string|max:255',
+        $residents = User::where('barangay_id', Auth::user()->barangay_id)
+            ->where('role', 'resident')
+            ->where(function ($q) use ($query) {
+                $q->where('full_name', 'like', "%{$query}%")
+                    ->orWhere('phone_number', 'like', "%{$query}%");
+            })
+            ->orderBy('full_name')
+            ->limit(10)
+            ->get(['id', 'full_name', 'phone_number', 'address']);
 
-            'incident_type'             => 'nullable|required_without:report_id|string|max:255',
-            'description'               => 'nullable|required_without:report_id|string',
-            'confidential_notes'        => 'nullable|string',
-        ]);
+        return response()->json($residents);
+    }
+
+    public function store(StoreVawcBlotterRequest $request)
+    {
+        $validated = $request->validated();
 
         $barangayId = Auth::user()->barangay_id;
 
@@ -77,7 +82,9 @@ class VawcController extends Controller
         $incidentDescription = null;
 
         if (!empty($validated['report_id'])) {
-            $report = Report::with('user')->findOrFail($validated['report_id']);
+            $report = Report::with('user')
+                ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId))
+                ->findOrFail($validated['report_id']);
             $report->update(['status' => 'Blottered']);
 
             $reportId = $report->id;
@@ -89,8 +96,9 @@ class VawcController extends Controller
             $complainantId = $validated['is_registered_complainant'] ? $validated['complainant_id'] : null;
 
             if ($complainantId) {
-                $user = User::find($complainantId);
-                $complainantName = $user ? $user->full_name : null;
+                $user = User::where('barangay_id', $barangayId)->find($complainantId);
+                abort_unless($user, 422, 'Complainant must be a resident of your barangay.');
+                $complainantName = $user->full_name;
             } else {
                 $complainantName = $validated['complainant_name'];
             }
@@ -99,31 +107,47 @@ class VawcController extends Controller
             $incidentDescription = $validated['description'];
         }
 
-        $caseNumber = 'VAWC-' . date('Y') . '-' . str_pad(BlotterRecord::where('barangay_id', $barangayId)->count() + 1, 4, '0', STR_PAD_LEFT);
+        if ($validated['is_registered_respondent']) {
+            $respondentExists = User::where('barangay_id', $barangayId)->where('id', $validated['receiver_id'])->exists();
+            abort_unless($respondentExists, 422, 'Respondent must be a resident of your barangay.');
+        }
 
-        $blotter = BlotterRecord::create([
-            'barangay_id'          => $barangayId,
-            'report_id'            => $reportId,
-            'complainant_id'       => $complainantId,
-            'complainant_name'     => $complainantName,
-            'incident_type'        => $incidentType,
-            'incident_description' => $incidentDescription,
-            'receiver_id'          => $validated['is_registered_respondent'] ? $validated['receiver_id'] : null,
-            'receiver_name'        => !$validated['is_registered_respondent'] ? $validated['receiver_name'] : null,
-            'case_number'          => $caseNumber,
-            'status'               => 'Pending',
-            'official_entry_date'  => now(),
-        ]);
+        $blotter = DB::transaction(function () use ($barangayId, $reportId, $complainantId, $complainantName, $incidentType, $incidentDescription, $validated) {
+            $caseNumber = BlotterRecord::generateCaseNumber('VAWC', $barangayId);
 
-        // Create linked confidential VAWC details
-        VawcDetail::create([
-            'blotter_record_id'    => $blotter->id,
-            'officer_in_charge_id' => Auth::id(),
-            'confidential_notes'   => !empty($validated['confidential_notes']) ? $validated['confidential_notes'] : $incidentDescription,
-        ]);
+            $blotter = BlotterRecord::create([
+                'barangay_id'          => $barangayId,
+                'report_id'            => $reportId,
+                'complainant_id'       => $complainantId,
+                'complainant_name'     => $complainantName,
+                'incident_type'        => $incidentType,
+                'incident_description' => $incidentDescription,
+                'receiver_id'          => $validated['is_registered_respondent'] ? $validated['receiver_id'] : null,
+                'receiver_name'        => !$validated['is_registered_respondent'] ? $validated['receiver_name'] : null,
+                'case_number'          => $caseNumber,
+                'status'               => BlotterStatus::Pending,
+                'official_entry_date'  => now(),
+            ]);
+
+            $blotter->statusHistory()->create([
+                'from_status' => null,
+                'to_status'   => BlotterStatus::Pending->value,
+                'changed_by'  => Auth::id(),
+                'note'        => 'Confidential VAWC case filed.',
+            ]);
+
+            // Create linked confidential VAWC details
+            VawcDetail::create([
+                'blotter_record_id'    => $blotter->id,
+                'officer_in_charge_id' => Auth::id(),
+                'confidential_notes'   => !empty($validated['confidential_notes']) ? $validated['confidential_notes'] : $incidentDescription,
+            ]);
+
+            return $blotter;
+        });
 
         // Audit Trail
-        SystemLog::logAction($barangayId, Auth::id(), 'CREATE', 'VAWC Blotter', "Recorded confidential VAWC case #{$caseNumber}.");
+        SystemLog::logAction($barangayId, Auth::id(), 'CREATE', 'VAWC Blotter', "Recorded confidential VAWC case #{$blotter->case_number}.");
 
         return redirect()->route('vawc.blotters')->with('success', 'VAWC incident record created successfully.');
     }
@@ -138,12 +162,12 @@ class VawcController extends Controller
 
         $settledCases = BlotterRecord::where('barangay_id', $barangayId)
             ->whereHas('vawcDetail')
-            ->where('status', 'Settled')
+            ->where('status', BlotterStatus::Resolved)
             ->count();
 
         $escalatedCases = BlotterRecord::where('barangay_id', $barangayId)
             ->whereHas('vawcDetail')
-            ->where('status', 'Escalated')
+            ->where('status', BlotterStatus::EscalatedToCourt)
             ->count();
 
         $incidentDistribution = BlotterRecord::where('barangay_id', $barangayId)
@@ -171,7 +195,7 @@ class VawcController extends Controller
     {
         $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
             ->whereHas('vawcDetail')
-            ->with(['report.user', 'receiver', 'vawcDetail', 'mediations'])
+            ->with(['report.user', 'receiver', 'vawcDetail', 'mediations', 'statusHistory.actor'])
             ->findOrFail($id);
 
         return Inertia::render('VAWC/CaseHistory', [
@@ -218,16 +242,13 @@ class VawcController extends Controller
         ]);
     }
 
-    public function scheduleMediation(Request $request, $id)
+    public function scheduleMediation(ScheduleMediationRequest $request, $id)
     {
         $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
             ->whereHas('vawcDetail')
             ->findOrFail($id);
 
-        $validated = $request->validate([
-            'scheduled_date' => 'required|date|after:now',
-            'status'         => 'nullable|string|max:50',
-        ]);
+        $validated = $request->validated();
 
         $meetingCount = MediationSchedule::where('blotter_record_id', $blotter->id)->count();
 
@@ -235,14 +256,26 @@ class VawcController extends Controller
             return back()->withErrors(['error' => 'Maximum 3 mediation sessions reached for this case.']);
         }
 
-        $schedule = MediationSchedule::create([
-            'blotter_record_id' => $blotter->id,
-            'meeting_number'    => $meetingCount + 1,
-            'scheduled_date'    => $validated['scheduled_date'],
-            'status'            => $validated['status'] ?? 'Scheduled',
-        ]);
+        try {
+            $schedule = DB::transaction(function () use ($blotter, $validated, $meetingCount) {
+                $schedule = MediationSchedule::create([
+                    'blotter_record_id' => $blotter->id,
+                    'meeting_number'    => $meetingCount + 1,
+                    'scheduled_date'    => $validated['scheduled_date'],
+                    'status'            => $validated['status'] ?? 'Scheduled',
+                ]);
 
-        $blotter->update(['status' => 'Under Mediation']);
+                $blotter->transitionStatus(
+                    BlotterStatus::UnderMediation,
+                    Auth::user(),
+                    "Confidential mediation session #{$schedule->meeting_number} scheduled."
+                );
+
+                return $schedule;
+            });
+        } catch (\DomainException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
 
         SystemLog::logAction(
             Auth::user()->barangay_id,
@@ -255,7 +288,7 @@ class VawcController extends Controller
         return back()->with('success', "VAWC mediation session #{$schedule->meeting_number} scheduled successfully.");
     }
 
-    public function updateMediationNotes(Request $request, $id)
+    public function updateMediationNotes(UpdateMediationNotesRequest $request, $id)
     {
         $mediation = MediationSchedule::whereHas('blotter', function ($query) {
                 $query->where('barangay_id', Auth::user()->barangay_id)
@@ -263,9 +296,7 @@ class VawcController extends Controller
             })
             ->findOrFail($id);
 
-        $validated = $request->validate([
-            'notes' => 'nullable|string|max:10000',
-        ]);
+        $validated = $request->validated();
 
         $mediation->update([
             'notes' => $validated['notes'] ?? null,
@@ -288,13 +319,19 @@ class VawcController extends Controller
             ->whereHas('vawcDetail')
             ->findOrFail($id);
 
-        $blotter->update(['status' => 'Resolved']);
+        try {
+            DB::transaction(function () use ($blotter) {
+                $blotter->transitionStatus(BlotterStatus::Resolved, Auth::user(), 'Confidential VAWC case resolved.');
 
-        if ($blotter->report_id) {
-            $report = Report::find($blotter->report_id);
-            if ($report) {
-                $report->update(['status' => 'completed']);
-            }
+                if ($blotter->report_id) {
+                    $report = Report::find($blotter->report_id);
+                    if ($report) {
+                        $report->update(['status' => 'completed']);
+                    }
+                }
+            });
+        } catch (\DomainException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
 
         SystemLog::logAction(
@@ -314,13 +351,19 @@ class VawcController extends Controller
             ->whereHas('vawcDetail')
             ->findOrFail($id);
 
-        $blotter->update(['status' => 'Escalated to Court']);
+        try {
+            DB::transaction(function () use ($blotter) {
+                $blotter->transitionStatus(BlotterStatus::EscalatedToCourt, Auth::user(), 'Confidential VAWC case escalated to court.');
 
-        if ($blotter->report_id) {
-            $report = Report::find($blotter->report_id);
-            if ($report) {
-                $report->update(['status' => 'escalated']);
-            }
+                if ($blotter->report_id) {
+                    $report = Report::find($blotter->report_id);
+                    if ($report) {
+                        $report->update(['status' => 'escalated']);
+                    }
+                }
+            });
+        } catch (\DomainException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
 
         SystemLog::logAction(
@@ -332,5 +375,30 @@ class VawcController extends Controller
         );
 
         return redirect()->route('vawc.blotters')->with('success', 'Case escalated to court.');
+    }
+
+    public function reopenCase(ReopenCaseRequest $request, $id)
+    {
+        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+            ->whereHas('vawcDetail')
+            ->findOrFail($id);
+
+        $validated = $request->validated();
+
+        try {
+            $blotter->reopen(BlotterStatus::Pending, Auth::user(), $validated['reason']);
+        } catch (\DomainException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        SystemLog::logAction(
+            Auth::user()->barangay_id,
+            Auth::id(),
+            'UPDATE',
+            'VAWC Blotter',
+            "Reopened VAWC Case #{$blotter->case_number}: {$validated['reason']}"
+        );
+
+        return back()->with('success', 'Case reopened successfully.');
     }
 }

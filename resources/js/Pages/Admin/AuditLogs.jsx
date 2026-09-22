@@ -22,8 +22,8 @@ export default function AuditLogs({ logs }) {
                             {logs.data.map((log) => (
                                 <tr key={log.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(log.created_at).toLocaleString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.user?.name || 'System'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.action}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.actor?.full_name || 'System'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.action_type}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">{log.description}</td>
                                 </tr>
                             ))}

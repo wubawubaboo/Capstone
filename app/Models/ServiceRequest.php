@@ -27,6 +27,7 @@ class ServiceRequest extends Model
     // Scopes
     public function scopePending($query) { return $query->where('status', 'Pending'); }
     public function scopeActive($query) { return $query->where('status', 'In Progress'); }
+    public function scopeForBarangay($query, $barangayId) { return $query->where('barangay_id', $barangayId); }
 
     // State Transitions
     public function assignAsset($asset)
