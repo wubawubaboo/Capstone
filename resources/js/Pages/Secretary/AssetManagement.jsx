@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 export default function AssetManagement({ assets }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -114,6 +115,9 @@ export default function AssetManagement({ assets }) {
                             )}
                         </tbody>
                     </table>
+                    <div className="p-4">
+                        <PaginationLinks paginator={assets} />
+                    </div>
                 </div>
             </div>
         </SecretaryLayout>

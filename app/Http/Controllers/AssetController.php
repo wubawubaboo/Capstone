@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Models\BarangayAsset;
 use App\Models\SystemLog;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -22,12 +22,9 @@ class AssetController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAssetRequest $request)
     {
-        $validated = $request->validate([
-            'asset_name' => 'required|string|max:255',
-            'asset_type' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $asset = BarangayAsset::create([
             'barangay_id' => Auth::user()->barangay_id,

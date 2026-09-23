@@ -10,15 +10,17 @@ class BarangayAsset extends Model
     /** @use HasFactory<\Database\Factories\BarangayAssetFactory> */
     use HasFactory;
 
-    protected $guarded = [];
-    protected $casts = ['is_available' => 'boolean'];
-
     protected $fillable = [
         'barangay_id',
         'asset_name',
         'asset_type',
         'is_available',
         'is_archived',
+    ];
+
+    protected $casts = [
+        'is_available' => 'boolean',
+        'is_archived' => 'boolean',
     ];
 
     public function barangay() { return $this->belongsTo(Barangay::class); }

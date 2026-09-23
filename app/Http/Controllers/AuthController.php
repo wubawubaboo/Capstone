@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\ApproveResidentAccount;
+use App\Actions\Account\RejectResidentAccount;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\RejectAccountRequest;
 use App\Http\Requests\Auth\StorePoliceRequest;
@@ -9,7 +12,6 @@ use App\Http\Requests\Auth\UpdateStaffAccountRequest;
 use App\Models\Barangay;
 use App\Models\SystemLog;
 use App\Models\User;
-use App\Services\PhilSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -18,12 +20,6 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
-    protected $smsService;
-  
-    public function __construct(PhilSmsService $smsService)
-    {
-        $this->smsService = $smsService;
-    }
     private function redirectBasedOnRole()
     {
         return match (Auth::user()->role) {
@@ -39,22 +35,19 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) return $this->redirectBasedOnRole();
-        
+
         return Inertia::render('Auth/Login');
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
         if (Auth::check()) return $this->redirectBasedOnRole();
 
-        $credentials = $request->validate([
-            'phone_number' => ['required', 'string'],
-            'password' => ['required'],
-        ]);
+        $credentials = $request->validated();
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            
+
             if ($user->role === 'resident' && !$user->is_verified) {
                 Auth::logout();
                 return back()->withErrors([
@@ -68,7 +61,7 @@ class AuthController extends Controller
                     'phone_number' => 'Staff members must use the secure staff portal login.',
                 ]);
             }
-            
+
             $request->session()->regenerate();
             return to_route('resident.home');
         }
@@ -85,14 +78,11 @@ class AuthController extends Controller
         return Inertia::render('Auth/StaffLogin');
     }
 
-    public function staffLogin(Request $request)
+    public function staffLogin(LoginRequest $request)
     {
         if (Auth::check()) return $this->redirectBasedOnRole();
 
-        $credentials = $request->validate([
-            'phone_number' => ['required', 'string'],
-            'password' => ['required'],
-        ]);
+        $credentials = $request->validated();
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
@@ -112,7 +102,7 @@ class AuthController extends Controller
         return back()->withErrors(['phone_number' => 'Invalid staff credentials.']);
     }
 
-    public function showRegistration() 
+    public function showRegistration()
     {
         if (Auth::check()) return $this->redirectBasedOnRole();
 
@@ -170,18 +160,21 @@ class AuthController extends Controller
             ->where('barangay_id', $barangayId)
             ->where('is_verified', false)
             ->latest()
-            ->get(); 
+            ->paginate(self::PER_PAGE, ['*'], 'pending_page')
+            ->withQueryString();
 
         $verifiedResidents = User::where('role', 'resident')
             ->where('barangay_id', $barangayId)
             ->where('is_verified', true)
             ->latest()
-            ->get();
+            ->paginate(self::PER_PAGE, ['*'], 'verified_page')
+            ->withQueryString();
 
         $policeAccounts = User::where('role', 'barangay_police')
             ->where('barangay_id', $barangayId)
             ->latest()
-            ->get();
+            ->paginate(self::PER_PAGE, ['*'], 'police_page')
+            ->withQueryString();
 
         return Inertia::render('Secretary/AccountRequests', [
             'pendingResidents' => $pendingResidents,
@@ -190,75 +183,42 @@ class AuthController extends Controller
         ]);
     }
 
-    public function approveAccount(User $user, PhilSmsService $smsService)
+    public function approveAccount(Request $request, User $user, ApproveResidentAccount $approveResidentAccount)
     {
-        abort_unless($user->barangay_id === Auth::user()->barangay_id, 404);
-        abort_unless($user->role === 'resident' && !$user->is_verified, 404);
+        abort_unless($request->user()->can('manageResident', $user), 404);
+        abort_unless($user->isPendingVerification(), 404);
 
-        $user->update(['is_verified' => true]);
-
-        $message = "Your account has been approved. You may now log in to the portal and access our services.";
-        $smsService->sendSms($user->phone_number, $message);
-
-        SystemLog::record('UPDATE', 'Account', "Approved resident account for {$user->full_name}.", $user->barangay_id);
+        $approveResidentAccount($user);
 
         return back()->with('success', 'Account approved successfully and SMS sent.');
     }
 
-    public function rejectAccount(RejectAccountRequest $request, User $user, PhilSmsService $smsService)
+    public function rejectAccount(RejectAccountRequest $request, User $user, RejectResidentAccount $rejectResidentAccount)
     {
-        abort_unless($user->barangay_id === Auth::user()->barangay_id, 404);
-        abort_unless($user->role === 'resident' && !$user->is_verified, 404);
+        abort_unless($request->user()->can('manageResident', $user), 404);
+        abort_unless($user->isPendingVerification(), 404);
 
         $validated = $request->validated();
 
-        $message = "Your account verification was declined. Reason: " . $validated['reason'] . ".";
-        
-        if (!empty($validated['custom_message'])) {
-            $message .= " " . $validated['custom_message'];
-        }
-        
-        $message .= " Please register again with valid information.";
-
-        $smsService->sendSms($user->phone_number, $message);
-
-        if ($user->id_photo_path) {
-            Storage::delete($user->id_photo_path);
-        }
-        if ($user->selfie_id_path) {
-            Storage::delete($user->selfie_id_path);
-        }
-
-        SystemLog::record('DELETE', 'Account', "Rejected and removed resident account for {$user->full_name}. Reason: {$validated['reason']}.", $user->barangay_id);
-
-        $user->delete();
+        $rejectResidentAccount($user, $validated['reason'], $validated['custom_message'] ?? null);
 
         return back()->with('success', 'Account rejected, removed, and SMS sent to the resident.');
     }
 
-    public function showIdPhoto(User $user)
+    public function showIdPhoto(Request $request, User $user)
     {
-        if (Auth::user()->role !== 'secretary' || $user->barangay_id !== Auth::user()->barangay_id || $user->role !== 'resident') {
-            abort(403, 'Unauthorized access.');
-        }
-
-        if (!$user->id_photo_path || !Storage::exists($user->id_photo_path)) {
-            abort(404, 'ID photo not found.');
-        }
+        abort_unless($request->user()->can('viewVerificationDocuments', $user), 403, 'Unauthorized access.');
+        abort_unless($user->id_photo_path && Storage::exists($user->id_photo_path), 404, 'ID photo not found.');
 
         SystemLog::record('VIEW', 'Account', "Viewed ID photo for {$user->full_name}.", $user->barangay_id);
 
         return Storage::response($user->id_photo_path);
     }
-    public function showSelfiePhoto(User $user)
-    {
-        if (Auth::user()->role !== 'secretary' || $user->barangay_id !== Auth::user()->barangay_id || $user->role !== 'resident') {
-            abort(403, 'Unauthorized access.');
-        }
 
-        if (!$user->selfie_id_path || !Storage::exists($user->selfie_id_path)) {
-            abort(404, 'Selfie photo not found.');
-        }
+    public function showSelfiePhoto(Request $request, User $user)
+    {
+        abort_unless($request->user()->can('viewVerificationDocuments', $user), 403, 'Unauthorized access.');
+        abort_unless($user->selfie_id_path && Storage::exists($user->selfie_id_path), 404, 'Selfie photo not found.');
 
         SystemLog::record('VIEW', 'Account', "Viewed selfie ID photo for {$user->full_name}.", $user->barangay_id);
 
@@ -286,8 +246,7 @@ class AuthController extends Controller
 
     public function updatePolice(UpdateStaffAccountRequest $request, User $user)
     {
-        abort_unless($user->barangay_id === Auth::user()->barangay_id, 404);
-        abort_unless($user->role === 'barangay_police', 404);
+        abort_unless($request->user()->can('managePolice', $user), 404);
 
         $user->update($request->validated());
 
@@ -296,10 +255,9 @@ class AuthController extends Controller
         return redirect()->back()->with('success', 'Police account updated.');
     }
 
-    public function destroyPolice(User $user)
+    public function destroyPolice(Request $request, User $user)
     {
-        abort_unless($user->barangay_id === Auth::user()->barangay_id, 404);
-        abort_unless($user->role === 'barangay_police', 404);
+        abort_unless($request->user()->can('managePolice', $user), 404);
 
         SystemLog::record('DELETE', 'Account', "Deleted Barangay Police account for {$user->full_name}.", $user->barangay_id);
 
@@ -309,8 +267,7 @@ class AuthController extends Controller
 
     public function updateResident(UpdateStaffAccountRequest $request, User $user)
     {
-        abort_unless($user->barangay_id === Auth::user()->barangay_id, 404);
-        abort_unless($user->role === 'resident', 404);
+        abort_unless($request->user()->can('manageResident', $user), 404);
 
         $user->update($request->validated());
 
@@ -319,16 +276,15 @@ class AuthController extends Controller
         return redirect()->back()->with('success', 'Resident account updated.');
     }
 
-    public function destroyResident(User $user)
+    public function destroyResident(Request $request, User $user)
     {
-        abort_unless($user->barangay_id === Auth::user()->barangay_id, 404);
-        abort_unless($user->role === 'resident', 404);
+        abort_unless($request->user()->can('manageResident', $user), 404);
 
         SystemLog::record('DELETE', 'Account', "Deleted resident account for {$user->full_name}.", $user->barangay_id);
 
         if ($user->id_photo_path) Storage::delete($user->id_photo_path);
         if ($user->selfie_id_path) Storage::delete($user->selfie_id_path);
-        
+
         $user->delete();
         return redirect()->back()->with('success', 'Resident account deleted.');
     }

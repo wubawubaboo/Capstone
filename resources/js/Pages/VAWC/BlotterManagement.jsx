@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import VAWCLayout from '@/Layouts/VAWCLayout';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 export default function BlotterManagement({ blotters }) {
     const records = blotters?.data || [];
@@ -57,7 +58,7 @@ export default function BlotterManagement({ blotters }) {
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                         <Link
-                                            href={route('vawc.case-history', { id: row.id })}
+                                            href={route('vawc.case-history', { blotter: row.id })}
                                             className="text-[#3B122D] hover:underline font-bold text-xs"
                                         >
                                             View Details →
@@ -74,6 +75,9 @@ export default function BlotterManagement({ blotters }) {
                         )}
                     </tbody>
                 </table>
+                <div className="p-4">
+                    <PaginationLinks paginator={blotters} />
+                </div>
             </div>
         </VAWCLayout>
     );

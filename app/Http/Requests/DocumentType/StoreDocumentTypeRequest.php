@@ -23,7 +23,7 @@ class StoreDocumentTypeRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'base_fee' => 'nullable|numeric|min:0',
-            'template_type' => 'nullable|in:docx,image',
+            'template_type' => 'required_with:template_file|nullable|in:docx,image',
             'template_file' => [
                 'nullable',
                 'file',

@@ -13,6 +13,9 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /** Roles manageable from the admin Account Management page. */
+    public const MANAGEABLE_STAFF_ROLES = ['secretary', 'vawc', 'admin'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -59,7 +62,7 @@ class User extends Authenticatable
 
     // Relationships
     public function barangay() { return $this->belongsTo(Barangay::class); }
-    public function reports() { return $this->hasMany(Report::class, 'reporter_id'); }
+    public function reports() { return $this->hasMany(Report::class, 'user_id'); }
     public function documentRequests() { return $this->hasMany(DocumentRequest::class, 'requester_id'); }
     public function serviceRequests() { return $this->hasMany(ServiceRequest::class, 'requester_id'); }
     public function receivedBlotters() { return $this->hasMany(BlotterRecord::class, 'receiver_id'); }
@@ -80,11 +83,20 @@ class User extends Authenticatable
 
     // Role Checks
     public function isRole($role) { return $this->role === $role; }
-    public function isCityAdmin() { return $this->role === 'city_admin'; }
     public function isSecretary() { return $this->role === 'secretary'; }
     public function isResident() { return $this->role === 'resident'; }
+    public function isPendingVerification(): bool { return $this->role === 'resident' && !$this->is_verified; }
 
     // Query Scopes
     public function scopeByBarangay($query, $barangayId) { return $query->where('barangay_id', $barangayId); }
     public function scopeSecretaries($query) { return $query->where('role', 'secretary'); }
+
+    /**
+     * Admin accounts are citywide (no barangay); every other manageable
+     * staff role belongs to the barangay it was assigned.
+     */
+    public static function barangayIdForRole(string $role, ?int $requestedBarangayId): ?int
+    {
+        return $role === 'admin' ? null : $requestedBarangayId;
+    }
 }

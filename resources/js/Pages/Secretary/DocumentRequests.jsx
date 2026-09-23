@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import { router } from '@inertiajs/react';
 import GenerateReportModal from '@/Components/GenerateReportModal';
+import PaginationLinks from '@/Components/PaginationLinks';
 import DocumentTypesTab from './DocumentTypesTab';
 
 export default function DocumentRequests({ requests, filters, documentTypes, fieldCatalog }) {
@@ -70,8 +71,8 @@ export default function DocumentRequests({ requests, filters, documentTypes, fie
                                     className="appearance-none bg-white border border-slate-200 text-slate-700 text-sm rounded-md pl-4 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
                                 >
                                     <option value="">All Statuses</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="ready_for_pickup">Ready for Pickup</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Ready">Ready for Pickup</option>
                                     <option value="Claimed">Claimed</option>
                                 </select>
 
@@ -139,6 +140,7 @@ export default function DocumentRequests({ requests, filters, documentTypes, fie
                                 )}
                             </tbody>
                         </table>
+                        <PaginationLinks paginator={requests} />
                     </div>
                 )}
 

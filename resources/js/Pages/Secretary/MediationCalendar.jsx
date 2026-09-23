@@ -144,7 +144,7 @@ export default function MediationCalendar({ schedules = [] }) {
                                                 return (
                                                     <Link
                                                         key={item.id}
-                                                        href={route('secretary.case-history', { id: item.blotter_record_id || item.blotter?.id })}
+                                                        href={route('secretary.case-history', { blotter: item.blotter_record_id || item.blotter?.id })}
                                                         className="block p-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition text-left cursor-pointer"
                                                     >
                                                         <p className="text-[10px] font-bold text-blue-900 truncate">
@@ -205,7 +205,7 @@ export default function MediationCalendar({ schedules = [] }) {
                                             <div className="mt-2 pt-2 border-t border-slate-200/60 flex justify-between items-center text-[11px]">
                                                 <span className="text-slate-500">{item.blotter?.case_number}</span>
                                                 <Link
-                                                    href={route('secretary.case-history', { id: item.blotter_record_id || item.blotter?.id })}
+                                                    href={route('secretary.case-history', { blotter: item.blotter_record_id || item.blotter?.id })}
                                                     className="font-bold text-blue-600 hover:underline"
                                                 >
                                                     View Case →
@@ -253,7 +253,7 @@ export default function MediationCalendar({ schedules = [] }) {
                                             {parties.complainant} vs. {parties.respondent}
                                         </p>
                                         <Link
-                                            href={route('secretary.case-history', { id: ev.blotter_record_id || ev.blotter?.id })}
+                                            href={route('secretary.case-history', { blotter: ev.blotter_record_id || ev.blotter?.id })}
                                             className="text-xs text-blue-600 font-bold hover:underline block mt-2"
                                         >
                                             Open Case Details →

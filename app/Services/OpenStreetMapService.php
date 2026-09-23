@@ -12,9 +12,8 @@ class OpenStreetMapService
     public function reverseGeocode($latitude, $longitude)
     {
         try {
-            // Nominatim requires a User-Agent identifying your application
             $response = Http::withHeaders([
-                'User-Agent' => 'SanNicolasEmergencySystem/1.0 (your-email@example.com)'
+                'User-Agent' => $this->userAgent(),
             ])->get('https://nominatim.openstreetmap.org/reverse', [
                 'lat' => $latitude,
                 'lon' => $longitude,
@@ -38,5 +37,24 @@ class OpenStreetMapService
             Log::error('OSM Geocoding Error: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Build the User-Agent Nominatim's usage policy requires. Falls back to
+     * the app URL (and logs a warning) if OSM_CONTACT_EMAIL isn't set, since
+     * an identifying contact is required for requests not to be blocked.
+     */
+    private function userAgent(): string
+    {
+        $contact = config('services.osm.contact');
+
+        if (!$contact) {
+            Log::warning('OSM_CONTACT_EMAIL is not set; falling back to APP_URL for the Nominatim User-Agent. Set OSM_CONTACT_EMAIL to a real contact to avoid being blocked.');
+            $contact = config('app.url', 'no-contact-configured');
+        }
+
+        $appName = config('app.name', 'Laravel');
+
+        return "{$appName}/1.0 ({$contact})";
     }
 }

@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DocumentRequestStatus;
 use App\Exports\DocumentRequestsExport;
+use App\Http\Requests\ExportFilterRequest;
+use App\Http\Requests\DocumentRequest\StoreDocumentRequestRequest;
+use App\Http\Requests\DocumentRequest\UpdateDocumentRequestStatusRequest;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\SystemLog;
@@ -11,6 +15,7 @@ use App\Services\PhilSmsService;
 use App\Support\DocumentFieldCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -42,13 +47,9 @@ class DocumentRequestController extends Controller
         ]);
     }
 
-    public function export(Request $request)
+    public function export(ExportFilterRequest $request)
     {
-        $validated = $request->validate([
-            'status' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        $validated = $request->validated();
 
         $query = DocumentRequest::forBarangay(Auth::user()->barangay_id)
             ->with(['requester', 'documentType']);
@@ -71,52 +72,45 @@ class DocumentRequestController extends Controller
         return Excel::download(new DocumentRequestsExport($requests), $filename);
     }
 
-    public function store(Request $request)
+    public function store(StoreDocumentRequestRequest $request)
     {
-        $validated = $request->validate([
-            'document_type_id' => 'required|exists:document_types,id',
-            'purpose' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         DocumentRequest::create([
             'requester_id' => Auth::user()->id,
             'barangay_id' => Auth::user()->barangay_id,
             'document_type_id' => $validated['document_type_id'],
             'purpose' => $validated['purpose'],
-            'status' => 'pending',
+            'status' => DocumentRequestStatus::Pending,
         ]);
 
         return back()->with('success', 'Document request submitted successfully. You will receive an SMS when it is ready.');
     }
 
-    public function updateStatus(Request $request, DocumentRequest $documentRequest)
+    public function updateStatus(UpdateDocumentRequestStatusRequest $request, DocumentRequest $documentRequest, PhilSmsService $smsService)
     {
         abort_unless($documentRequest->barangay_id === Auth::user()->barangay_id, 404);
 
-        $validated = $request->validate(['status' => 'required|in:Ready,Claimed']);
+        $validated = $request->validated();
 
-        if ($validated['status'] === 'Ready') $documentRequest->markAsReady();
-        if ($validated['status'] === 'Claimed') $documentRequest->claimDocument();
+        $to = DocumentRequestStatus::from($validated['status']);
+
+        DB::transaction(function () use ($documentRequest, $to) {
+            $documentRequest->transitionStatus($to, Auth::user());
+        });
 
         SystemLog::logAction($documentRequest->barangay_id, Auth::id(), 'UPDATE', 'Documents', "Updated Doc Ref #{$documentRequest->reference_no} to {$validated['status']}.");
 
+        if ($to === DocumentRequestStatus::Ready) {
+            $documentRequest->load(['documentType', 'requester', 'barangay']);
+            $documentName = $documentRequest->documentType->name;
+            $residentName = $documentRequest->requester->full_name;
+            $message = "Brgy. {$documentRequest->barangay->name}: Hello {$residentName}, your requested {$documentName} is now READY FOR PICKUP at the barangay hall. Please bring a valid ID.";
+
+            $smsService->sendSms($documentRequest->requester->phone_number, $message);
+        }
+
         return back()->with('success', 'Document status updated.');
-    }
-
-    public function markAsReady(DocumentRequest $documentRequest, PhilSmsService $smsService)
-    {
-        abort_unless($documentRequest->barangay_id === Auth::user()->barangay_id, 404);
-
-        $documentRequest->update(['status' => 'ready_for_pickup']);
-
-        $documentName = $documentRequest->documentType->name;
-        $residentName = $documentRequest->user->full_name;
-        $barangayName = $documentRequest->barangay;
-        $message = "Brgy. {$barangayName}: Hello {$residentName}, your requested {$documentName} is now READY FOR PICKUP at the barangay hall. Please bring a valid ID.";
-
-        $smsService->sendSms($documentRequest->user->phone_number, $message);
-
-        return back()->with('success', 'Document marked as ready and SMS sent to the resident.');
     }
 
     public function generate(DocumentRequest $documentRequest, DocumentGenerationService $service)

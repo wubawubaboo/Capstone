@@ -26,12 +26,9 @@ class AdminController extends Controller
         ]);
     }
 
-    /** Roles manageable from the admin Account Management page. */
-    private const MANAGEABLE_ROLES = ['secretary', 'vawc', 'admin'];
-
     public function accounts()
     {
-        $staffAccounts = User::with('barangay')->whereIn('role', self::MANAGEABLE_ROLES)->get();
+        $staffAccounts = User::with('barangay')->whereIn('role', User::MANAGEABLE_STAFF_ROLES)->get();
         $barangays = Barangay::orderBy('name')->get();
 
         return Inertia::render('Admin/AccountManagement', [
@@ -47,7 +44,7 @@ class AdminController extends Controller
         $account = User::create([
             'full_name' => $validated['full_name'],
             'phone_number' => $validated['phone_number'],
-            'barangay_id' => $validated['role'] === 'admin' ? null : $validated['barangay_id'],
+            'barangay_id' => User::barangayIdForRole($validated['role'], $validated['barangay_id'] ?? null),
             'role' => $validated['role'],
             'password' => Hash::make($validated['password']),
             'is_verified' => true,
@@ -69,14 +66,14 @@ class AdminController extends Controller
 
     public function updateAccount(UpdateStaffAccountRequest $request, User $user)
     {
-        abort_unless(in_array($user->role, self::MANAGEABLE_ROLES), 404);
+        abort_unless($request->user()->can('manageStaffAccount', $user), 404);
 
         $validated = $request->validated();
 
         $updates = [
             'full_name' => $validated['full_name'],
             'phone_number' => $validated['phone_number'],
-            'barangay_id' => $validated['role'] === 'admin' ? null : $validated['barangay_id'],
+            'barangay_id' => User::barangayIdForRole($validated['role'], $validated['barangay_id'] ?? null),
             'role' => $validated['role'],
             'address' => $validated['address'],
             'date_of_birth' => $validated['date_of_birth'],
@@ -102,11 +99,7 @@ class AdminController extends Controller
 
     public function destroyAccount(Request $request, User $user)
     {
-        abort_unless(in_array($user->role, self::MANAGEABLE_ROLES), 404);
-
-        if ($user->id === $request->user()->id) {
-            return redirect()->back()->with('error', 'You cannot delete your own account.');
-        }
+        abort_unless($request->user()->can('delete', $user), 404);
 
         $name = $user->full_name;
         $role = $user->role;

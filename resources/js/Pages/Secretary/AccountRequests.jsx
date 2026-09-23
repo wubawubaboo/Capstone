@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import { Link, useForm, router } from '@inertiajs/react';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 const RejectAccountModal = ({ user, onClose }) => {
     const { data, setData, post, processing, errors } = useForm({
@@ -115,7 +116,11 @@ const EditAccountModal = ({ user, type, onClose }) => {
     );
 };
 
-export default function AccountRequests({ pendingResidents = [], verifiedResidents = [], policeAccounts = [] }) {
+export default function AccountRequests({
+    pendingResidents = { data: [], links: [], total: 0 },
+    verifiedResidents = { data: [], links: [], total: 0 },
+    policeAccounts = { data: [], links: [], total: 0 },
+}) {
     const [userToReject, setUserToReject] = useState(null);
     const [userToEdit, setUserToEdit] = useState(null);
     const [editType, setEditType] = useState(null); 
@@ -164,7 +169,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                         onClick={() => setActiveTab('pending')}
                         className={`pb-3 text-sm font-bold uppercase whitespace-nowrap transition-colors ${activeTab === 'pending' ? 'border-b-2 border-slate-800 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        Pending Requests ({pendingResidents.length})
+                        Pending Requests ({pendingResidents.total})
                     </button>
                     <button 
                         onClick={() => setActiveTab('verified')}
@@ -194,7 +199,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {pendingResidents.length > 0 ? pendingResidents.map((item) => (
+                                {pendingResidents.data.length > 0 ? pendingResidents.data.map((item) => (
                                     <tr key={item.id} className="hover:bg-slate-50">
                                         <td className="py-4 px-2 font-medium text-slate-800">{item.full_name}</td>
                                         <td className="py-4 px-2 text-slate-600">{item.phone_number}</td>
@@ -239,6 +244,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                 )}
                             </tbody>
                         </table>
+                        <PaginationLinks paginator={pendingResidents} />
                     </div>
                 )}
 
@@ -256,7 +262,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {verifiedResidents.length > 0 ? verifiedResidents.map((item) => (
+                                {verifiedResidents.data.length > 0 ? verifiedResidents.data.map((item) => (
                                     <tr key={item.id} className="hover:bg-slate-50">
                                         <td className="py-4 px-2 font-medium text-slate-800">{item.full_name}</td>
                                         <td className="py-4 px-2 text-slate-600">{item.phone_number}</td>
@@ -277,6 +283,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                 )}
                             </tbody>
                         </table>
+                        <PaginationLinks paginator={verifiedResidents} />
                     </div>
                 )}
 
@@ -346,7 +353,7 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {policeAccounts.map(police => (
+                                        {policeAccounts.data.map(police => (
                                             <tr key={police.id} className="hover:bg-slate-50">
                                                 <td className="py-3 px-4 font-medium text-slate-800">{police.full_name}</td>
                                                 <td className="py-3 px-4 text-slate-600">{police.phone_number}</td>
@@ -359,11 +366,12 @@ export default function AccountRequests({ pendingResidents = [], verifiedResiden
                                                 </td>
                                             </tr>
                                         ))}
-                                        {policeAccounts.length === 0 && (
+                                        {policeAccounts.data.length === 0 && (
                                             <tr><td colSpan="4" className="py-6 text-center text-slate-500">No police accounts found.</td></tr>
                                         )}
                                     </tbody>
                                 </table>
+                                <PaginationLinks paginator={policeAccounts} />
                             </div>
                         </div>
                     </div>

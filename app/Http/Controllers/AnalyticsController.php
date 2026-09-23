@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 class AnalyticsController extends Controller
 {
     private const HEATMAP_DAYS = 90;
+    private const HEATMAP_MAX_POINTS = 2000;
 
     public function index(Request $request)
     {
@@ -23,7 +24,7 @@ class AnalyticsController extends Controller
         $heatmapQuery = fn () => Report::whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->where('created_at', '>=', $heatmapSince)
-            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId));
+            ->forBarangay($barangayId);
 
         $latestReport = $heatmapQuery()->latest()->first();
 
@@ -37,6 +38,8 @@ class AnalyticsController extends Controller
         }
 
         $heatmapData = $heatmapQuery()
+            ->latest()
+            ->limit(self::HEATMAP_MAX_POINTS)
             ->get(['latitude', 'longitude', 'incident_type'])
             ->map(function ($report) {
                 return [
@@ -46,7 +49,7 @@ class AnalyticsController extends Controller
                 ];
             })->values();
 
-        $incidentTrends = Report::whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId))
+        $incidentTrends = Report::forBarangay($barangayId)
             ->select('incident_type', DB::raw('count(*) as count'))
             ->groupBy('incident_type')
             ->get();

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import GenerateReportModal from '@/Components/GenerateReportModal';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 export default function ServiceRequests({ serviceRequests, availableAssets, filters }) {
     const requests = serviceRequests?.data || [];
@@ -164,6 +165,7 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                             )}
                         </tbody>
                     </table>
+                    <PaginationLinks paginator={serviceRequests} />
                 </div>
             </div>
 

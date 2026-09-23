@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Blotter\FileBlotterCase;
 use App\Enums\BlotterStatus;
+use App\Enums\MediationStatus;
+use App\Enums\ReportStatus;
 use App\Exports\BlottersExport;
+use App\Http\Requests\ExportFilterRequest;
 use App\Http\Requests\Blotter\ReopenCaseRequest;
 use App\Http\Requests\Blotter\ScheduleMediationRequest;
 use App\Http\Requests\Blotter\StoreBlotterRequest;
+use App\Http\Requests\Blotter\StoreVawcDetailRequest;
 use App\Http\Requests\Blotter\UpdateMediationNotesRequest;
 use App\Models\BlotterRecord;
 use App\Models\MediationSchedule;
@@ -25,25 +30,22 @@ class BlotterController extends Controller
 {
     public function index()
     {
-    $blotters = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-        ->whereDoesntHave('vawcDetail')
-        ->with(['report.user', 'receiver'])
-        ->latest()
-        ->paginate(self::PER_PAGE);
+        $blotters = BlotterRecord::forBarangay(Auth::user()->barangay_id)
+            ->whereDoesntHave('vawcDetail')
+            ->with(['report.user', 'receiver'])
+            ->latest()
+            ->paginate(self::PER_PAGE);
 
-    return Inertia::render('Secretary/BlotterManagement', [
-        'blotters' => $blotters
-    ]);
+        return Inertia::render('Secretary/BlotterManagement', [
+            'blotters' => $blotters
+        ]);
     }
 
-    public function export(Request $request)
+    public function export(ExportFilterRequest $request)
     {
-        $validated = $request->validate([
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        $validated = $request->validated();
 
-        $query = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
+        $query = BlotterRecord::forBarangay(Auth::user()->barangay_id)
             ->whereDoesntHave('vawcDetail')
             ->with(['report.user', 'receiver']);
 
@@ -67,8 +69,8 @@ class BlotterController extends Controller
 
         $pendingReports = Report::with('user')
             ->whereDoesntHave('blotter')
-            ->whereIn('status', ['Pending', 'pending', 'in_progress'])
-            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId))
+            ->whereIn('status', [ReportStatus::Pending, ReportStatus::InProgress])
+            ->forBarangay($barangayId)
             ->get();
 
         return Inertia::render('Secretary/CreateBlotter', [
@@ -98,90 +100,27 @@ class BlotterController extends Controller
         return response()->json($residents);
     }
 
-    public function store(StoreBlotterRequest $request)
+    public function store(StoreBlotterRequest $request, FileBlotterCase $fileBlotterCase)
     {
-        $validated = $request->validated();
-
         $barangayId = Auth::user()->barangay_id;
 
-        $complainantId = null;
-        $complainantName = null;
-        $incidentType = null;
-        $incidentDescription = null;
-        $reportId = null;
-
-        if (!empty($validated['report_id'])) {
-            $report = Report::with('user')
-                ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId))
-                ->findOrFail($validated['report_id']);
-            $report->update(['status' => 'Blottered']);
-
-            $reportId = $report->id;
-            $complainantId = $report->user_id;
-            $complainantName = $report->user ? $report->user->full_name : 'Unknown';
-            $incidentType = $report->incident_type;
-            $incidentDescription = $report->description;
-        } else {
-            $complainantId = $validated['complainant_id'];
-            $user = User::where('barangay_id', $barangayId)->find($complainantId);
-            abort_unless($user, 422, 'Complainant must be a resident of your barangay.');
-
-            $complainantName = $user->full_name;
-            $incidentType = $validated['incident_type'];
-            $incidentDescription = $validated['description'];
-        }
-
-        if ($validated['is_registered_respondent']) {
-            $respondentExists = User::where('barangay_id', $barangayId)->where('id', $validated['receiver_id'])->exists();
-            abort_unless($respondentExists, 422, 'Respondent must be a resident of your barangay.');
-        }
-
-        $blotter = DB::transaction(function () use ($barangayId, $reportId, $complainantId, $complainantName, $incidentType, $incidentDescription, $validated) {
-            $caseNumber = BlotterRecord::generateCaseNumber('BLT', $barangayId);
-
-            $blotter = BlotterRecord::create([
-                'barangay_id'          => $barangayId,
-                'report_id'            => $reportId,
-                'complainant_id'       => $complainantId,
-                'complainant_name'     => $complainantName,
-                'incident_type'        => $incidentType,
-                'incident_description' => $incidentDescription,
-                'receiver_id'          => $validated['is_registered_respondent'] ? $validated['receiver_id'] : null,
-                'receiver_name'        => !$validated['is_registered_respondent'] ? $validated['receiver_name'] : null,
-                'case_number'          => $caseNumber,
-                'status'               => BlotterStatus::Pending,
-                'official_entry_date'  => now(),
-            ]);
-
-            $blotter->statusHistory()->create([
-                'from_status' => null,
-                'to_status'   => BlotterStatus::Pending->value,
-                'changed_by'  => Auth::id(),
-                'note'        => 'Case filed.',
-            ]);
-
-            return $blotter;
-        });
+        $blotter = $fileBlotterCase($request->validated(), $barangayId, $request->user());
 
         SystemLog::logAction($barangayId, Auth::id(), 'CREATE', 'Blotter', "Created Blotter Case #{$blotter->case_number}.");
 
         return to_route('secretary.blotters')->with('success', 'Blotter record created successfully.');
     }
 
-    public function storeVawcDetail(Request $request, $blotter)
+    public function storeVawcDetail(StoreVawcDetailRequest $request, BlotterRecord $blotter)
     {
-        $blotterRecord = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-            ->whereDoesntHave('vawcDetail')
-            ->findOrFail($blotter);
+        abort_unless($request->user()->can('view', $blotter), 404);
 
-        $validated = $request->validate([
-            'confidential_notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         VawcDetail::create([
-            'blotter_record_id'    => $blotterRecord->id,
+            'blotter_record_id'    => $blotter->id,
             'officer_in_charge_id' => Auth::id(),
-            'confidential_notes'   => $validated['confidential_notes'] ?? $blotterRecord->incident_description,
+            'confidential_notes'   => $validated['confidential_notes'] ?? $blotter->incident_description,
         ]);
 
         SystemLog::logAction(
@@ -189,33 +128,30 @@ class BlotterController extends Controller
             Auth::id(),
             'CREATE',
             'VAWC Blotter',
-            "Flagged Case #{$blotterRecord->case_number} as a confidential VAWC case."
+            "Flagged Case #{$blotter->case_number} as a confidential VAWC case."
         );
 
         return to_route('secretary.blotters')->with('success', 'Case flagged as a confidential VAWC case.');
     }
 
-    public function scheduleMediation(ScheduleMediationRequest $request, $id)
+    public function scheduleMediation(ScheduleMediationRequest $request, BlotterRecord $blotter)
     {
-    $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-        ->whereDoesntHave('vawcDetail')
-        ->findOrFail($id);
+        abort_unless($request->user()->can('view', $blotter), 404);
 
-    $validated = $request->validated();
+        $validated = $request->validated();
 
-    $meetingCount = MediationSchedule::where('blotter_record_id', $blotter->id)->count();
+        $meetingCount = MediationSchedule::where('blotter_record_id', $blotter->id)->count();
 
-    if ($meetingCount >= 3) {
-        return back()->withErrors(['error' => 'Maximum 3 mediation sessions reached for this case.']);
-    }
+        if ($meetingCount >= 3) {
+            return back()->withErrors(['error' => 'Maximum 3 mediation sessions reached for this case.']);
+        }
 
-    try {
         $schedule = DB::transaction(function () use ($blotter, $validated, $meetingCount) {
             $schedule = MediationSchedule::create([
                 'blotter_record_id' => $blotter->id,
                 'meeting_number'    => $meetingCount + 1,
                 'scheduled_date'    => $validated['scheduled_date'],
-                'status'            => $validated['status'] ?? 'Scheduled',
+                'status'            => $validated['status'] ?? MediationStatus::Scheduled,
             ]);
 
             $blotter->transitionStatus(
@@ -226,40 +162,34 @@ class BlotterController extends Controller
 
             return $schedule;
         });
-    } catch (\DomainException $e) {
-        return back()->withErrors(['error' => $e->getMessage()]);
+
+        SystemLog::logAction(
+            Auth::user()->barangay_id,
+            Auth::id(),
+            'CREATE',
+            'Mediation Schedule',
+            "Scheduled Session #{$schedule->meeting_number} for case #{$blotter->case_number}."
+        );
+
+        return back()->with('success', "Mediation session #{$schedule->meeting_number} scheduled successfully.");
     }
 
-    SystemLog::logAction(
-        Auth::user()->barangay_id,
-        Auth::id(),
-        'CREATE',
-        'Mediation Schedule',
-        "Scheduled Session #{$schedule->meeting_number} for case #{$blotter->case_number}."
-    );
-
-    return back()->with('success', "Mediation session #{$schedule->meeting_number} scheduled successfully.");
-    }
-
-
-    public function caseHistory($id)
+    public function caseHistory(BlotterRecord $blotter, Request $request)
     {
-        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-            ->whereDoesntHave('vawcDetail')
-            ->with(['report.user', 'receiver', 'mediations', 'statusHistory.actor'])
-            ->findOrFail($id);
+        abort_unless($request->user()->can('view', $blotter), 404);
+
+        $blotter->load(['report.user', 'receiver', 'mediations', 'statusHistory.actor']);
 
         return Inertia::render('Secretary/CaseHistory', [
             'blotter' => $blotter
         ]);
     }
 
-    public function downloadCaseReport($id)
+    public function downloadCaseReport(BlotterRecord $blotter, Request $request)
     {
-        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-            ->whereDoesntHave('vawcDetail')
-            ->with(['barangay', 'report.user', 'receiver', 'mediations'])
-            ->findOrFail($id);
+        abort_unless($request->user()->can('view', $blotter), 404);
+
+        $blotter->load(['barangay', 'report.user', 'receiver', 'mediations']);
 
         $pdf = Pdf::loadView('pdf.case-report', [
             'blotter'     => $blotter,
@@ -278,13 +208,9 @@ class BlotterController extends Controller
         return $pdf->download("case-report-{$blotter->case_number}.pdf");
     }
 
-    public function updateMediationNotes(UpdateMediationNotesRequest $request, $id)
+    public function updateMediationNotes(UpdateMediationNotesRequest $request, MediationSchedule $mediation)
     {
-        $mediation = MediationSchedule::whereHas('blotter', function ($query) {
-                $query->where('barangay_id', Auth::user()->barangay_id)
-                    ->whereDoesntHave('vawcDetail');
-            })
-            ->findOrFail($id);
+        abort_unless($request->user()->can('view', $mediation->blotter), 404);
 
         $validated = $request->validated();
 
@@ -320,12 +246,11 @@ class BlotterController extends Controller
         ]);
     }
 
-    public function mediationMeetingDetails($id)
+    public function mediationMeetingDetails(BlotterRecord $blotter, Request $request)
     {
-        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-            ->whereDoesntHave('vawcDetail')
-            ->with(['report.user', 'receiver', 'mediations'])
-            ->findOrFail($id);
+        abort_unless($request->user()->can('view', $blotter), 404);
+
+        $blotter->load(['report.user', 'receiver', 'mediations']);
 
         $latestMediation = $blotter->mediations->sortByDesc('scheduled_date')->first();
         $blotter->scheduled_date = $latestMediation ? $latestMediation->scheduled_date : null;
@@ -335,50 +260,38 @@ class BlotterController extends Controller
         ]);
     }
 
-    public function resolveCase($id)
+    public function resolveCase(BlotterRecord $blotter, Request $request)
     {
-        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-            ->whereDoesntHave('vawcDetail')
-            ->findOrFail($id);
+        abort_unless($request->user()->can('view', $blotter), 404);
 
-        try {
-            DB::transaction(function () use ($blotter) {
-                $blotter->transitionStatus(BlotterStatus::Resolved, Auth::user(), 'Case resolved.');
+        DB::transaction(function () use ($blotter) {
+            $blotter->transitionStatus(BlotterStatus::Resolved, Auth::user(), 'Case resolved.');
 
-                if ($blotter->report_id) {
-                    $report = Report::find($blotter->report_id);
-                    if ($report) {
-                        $report->update(['status' => 'completed']);
-                    }
+            if ($blotter->report_id) {
+                $report = Report::find($blotter->report_id);
+                if ($report) {
+                    $report->transitionStatus(ReportStatus::Completed, Auth::user(), 'Linked blotter case resolved.');
                 }
-            });
-        } catch (\DomainException $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
-        }
+            }
+        });
 
         return redirect()->route('secretary.blotters')->with('success', 'Case resolved and report closed.');
     }
 
-    public function escalateCase($id)
+    public function escalateCase(BlotterRecord $blotter, Request $request)
     {
-        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-            ->whereDoesntHave('vawcDetail')
-            ->findOrFail($id);
+        abort_unless($request->user()->can('view', $blotter), 404);
 
-        try {
-            DB::transaction(function () use ($blotter) {
-                $blotter->transitionStatus(BlotterStatus::EscalatedToCourt, Auth::user(), 'Case escalated to court.');
+        DB::transaction(function () use ($blotter) {
+            $blotter->transitionStatus(BlotterStatus::EscalatedToCourt, Auth::user(), 'Case escalated to court.');
 
-                if ($blotter->report_id) {
-                    $report = Report::find($blotter->report_id);
-                    if ($report) {
-                        $report->update(['status' => 'escalated']);
-                    }
+            if ($blotter->report_id) {
+                $report = Report::find($blotter->report_id);
+                if ($report) {
+                    $report->transitionStatus(ReportStatus::Escalated, Auth::user(), 'Linked blotter case escalated to court.');
                 }
-            });
-        } catch (\DomainException $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
-        }
+            }
+        });
 
         SystemLog::logAction(
             Auth::user()->barangay_id,
@@ -391,19 +304,13 @@ class BlotterController extends Controller
         return redirect()->route('secretary.blotters')->with('success', 'Case escalated to court.');
     }
 
-    public function reopenCase(ReopenCaseRequest $request, $id)
+    public function reopenCase(ReopenCaseRequest $request, BlotterRecord $blotter)
     {
-        $blotter = BlotterRecord::where('barangay_id', Auth::user()->barangay_id)
-            ->whereDoesntHave('vawcDetail')
-            ->findOrFail($id);
+        abort_unless($request->user()->can('view', $blotter), 404);
 
         $validated = $request->validated();
 
-        try {
-            $blotter->reopen(BlotterStatus::Pending, Auth::user(), $validated['reason']);
-        } catch (\DomainException $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
-        }
+        $blotter->reopen(BlotterStatus::Pending, Auth::user(), $validated['reason']);
 
         SystemLog::logAction(
             Auth::user()->barangay_id,

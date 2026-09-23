@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ReportStatus;
 use App\Exports\ReportsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ExportFilterRequest;
+use App\Http\Requests\Report\StoreEmergencyRequest;
 use App\Http\Requests\Report\StoreReportRequest;
+use App\Http\Requests\Report\UpdateReportStatusRequest;
 use App\Models\MediationSchedule;
 use App\Models\Report;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\OpenStreetMapService;
-use App\Services\PhilSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Events\SosTriggered;
 use Inertia\Inertia;
@@ -37,7 +41,7 @@ class ReportController extends Controller {
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
             'attachment_path' => $attachmentPath,
-            'status' => 'Pending',
+            'status' => ReportStatus::Pending,
         ]);
 
         return to_route('resident.home')->with('success', 'Emergency report submitted successfully.');  
@@ -121,24 +125,29 @@ class ReportController extends Controller {
         ]);
     }
 
-    public function storeEmergency(Request $request, PhilSmsService $smsService, OpenStreetMapService $geocodeService)
+    public function storeEmergency(StoreEmergencyRequest $request, OpenStreetMapService $geocodeService)
     {
-        $validated = $request->validate([
-            'emergency_type' => 'required|string',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-        ]);
+        $validated = $request->validated();
 
         $user = Auth::user();
         $barangay = $user->barangay->name ?? 'San Nicolas';
         $locationData = $geocodeService->reverseGeocode($validated['latitude'], $validated['longitude']);
         $address = $locationData ? $locationData['full_address'] : 'Unknown Location (Check GPS Map)';
         
-        $isOutsideJurisdiction = false;
-        if ($locationData && isset($locationData['village'])) {
-            if (stripos($locationData['village'], 'San Nicolas') === false) {
-                $isOutsideJurisdiction = true;
-            }
+        $withinBoundary = $user->barangay?->containsPoint(
+            (float) $validated['latitude'],
+            (float) $validated['longitude']
+        );
+
+        if ($withinBoundary !== null) {
+            // Barangay has a real boundary polygon on file: trust it.
+            $isOutsideJurisdiction = !$withinBoundary;
+        } else {
+            // No polygon fetched yet for this barangay: fall back to the
+            // coarser reverse-geocoded address match.
+            $isOutsideJurisdiction = $locationData
+                && isset($locationData['village'])
+                && stripos($locationData['village'], $barangay) === false;
         }
 
         $report = Report::create([
@@ -146,9 +155,11 @@ class ReportController extends Controller {
             'incident_type' => 'SOS_CRITICAL', 
             'description' => 'SOS EMERGENCY: ' . $validated['emergency_type'] . ' at ' . $address, 
             'latitude' => $validated['latitude'], 
-            'longitude' => $validated['longitude'], 
-            'status' => 'pending',
+            'longitude' => $validated['longitude'],
+            'status' => ReportStatus::Pending,
         ]);
+
+        SystemLog::record('CREATE', 'Report', "Triggered SOS emergency ({$validated['emergency_type']}) at {$address}.");
 
         broadcast(new SosTriggered($report));
 
@@ -172,7 +183,7 @@ class ReportController extends Controller {
         $barangayId = Auth::user()->barangay_id;
 
         $query = Report::with('user')
-            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId));
+            ->forBarangay($barangayId);
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
@@ -189,18 +200,14 @@ class ReportController extends Controller {
         ]);
     }
 
-    public function exportSecretary(Request $request)
+    public function exportSecretary(ExportFilterRequest $request)
     {
-        $validated = $request->validate([
-            'status' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        $validated = $request->validated();
 
         $barangayId = Auth::user()->barangay_id;
 
         $query = Report::with('user')
-            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId));
+            ->forBarangay($barangayId);
 
         $query->when($validated['status'] ?? null, function ($q, $status) {
             return $q->where('status', $status);
@@ -227,7 +234,7 @@ class ReportController extends Controller {
         $barangayId = Auth::user()->barangay_id;
 
         $query = Report::with('user')
-            ->whereHas('user', fn ($q) => $q->where('barangay_id', $barangayId));
+            ->forBarangay($barangayId);
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
@@ -244,18 +251,59 @@ class ReportController extends Controller {
         ]);
     }
 
-    public function updateStatus(Request $request, Report $report)
+    public function updateStatus(UpdateReportStatusRequest $request, Report $report)
     {
         abort_unless($report->user && $report->user->barangay_id === Auth::user()->barangay_id, 404);
 
-        $validated = $request->validate([
-            'status' => 'required|in:pending,in_progress,completed'
-        ]);
+        $validated = $request->validated();
 
-        $report->update(['status' => $validated['status']]);
+        $to = ReportStatus::from($validated['status']);
+        $now = now();
+        $lifecycleUpdates = [];
+
+        // Backfill any skipped earlier stage so the timeline has no gaps.
+        if ($to === ReportStatus::InProgress || $to === ReportStatus::Completed) {
+            if (!$report->acknowledged_at) {
+                $lifecycleUpdates['acknowledged_at'] = $now;
+            }
+        }
+
+        if ($to === ReportStatus::InProgress && !$report->responded_at) {
+            $lifecycleUpdates['responded_at'] = $now;
+        }
+
+        if ($to === ReportStatus::Completed) {
+            if (!$report->responded_at) {
+                $lifecycleUpdates['responded_at'] = $now;
+            }
+            if (!$report->resolved_at) {
+                $lifecycleUpdates['resolved_at'] = $now;
+            }
+        }
+
+        DB::transaction(function () use ($report, $to, $lifecycleUpdates) {
+            $report->transitionStatus($to, Auth::user());
+
+            if (!empty($lifecycleUpdates)) {
+                $report->update($lifecycleUpdates);
+            }
+        });
 
         SystemLog::record('UPDATE', 'Report', "Updated Report #{$report->id} status to {$validated['status']}.", $report->user->barangay_id);
 
         return back()->with('success', 'Report status updated successfully.');
+    }
+
+    public function acknowledge(Report $report)
+    {
+        abort_unless($report->user && $report->user->barangay_id === Auth::user()->barangay_id, 404);
+
+        if (!$report->acknowledged_at) {
+            $report->update(['acknowledged_at' => now()]);
+
+            SystemLog::record('UPDATE', 'Report', "Acknowledged SOS Report #{$report->id}.", $report->user->barangay_id);
+        }
+
+        return back()->with('success', 'Report acknowledged.');
     }
 }

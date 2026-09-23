@@ -120,7 +120,7 @@ export default function MediationCalendar({ schedules = [] }) {
                                             return (
                                                 <Link
                                                     key={item.id}
-                                                    href={route('vawc.case-history', { id: item.blotter_record_id || item.blotter?.id })}
+                                                    href={route('vawc.case-history', { blotter: item.blotter_record_id || item.blotter?.id })}
                                                     className="block p-1.5 rounded bg-rose-50 hover:bg-rose-100 border border-rose-200 transition text-left"
                                                 >
                                                     <p className="text-[10px] font-bold text-rose-950 truncate">

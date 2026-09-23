@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import VAWCLayout from '@/Layouts/VAWCLayout';
 import { Link, router } from '@inertiajs/react';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 const ReportDetailsModal = ({ report, onClose }) => {
     if (!report) return null;
@@ -40,6 +41,18 @@ const ReportDetailsModal = ({ report, onClose }) => {
                             <p className="text-xs font-bold text-slate-500 uppercase">Date & Time</p>
                             <p className="text-base font-medium text-slate-900">{new Date(report.created_at).toLocaleString()}</p>
                         </div>
+
+                        {isCritical && (
+                            <div>
+                                <p className="text-xs font-bold text-slate-500 uppercase">Response Timeline</p>
+                                <ul className="text-sm text-slate-700 space-y-1 mt-1">
+                                    <li>Triggered: {new Date(report.created_at).toLocaleString()}</li>
+                                    <li>Acknowledged: {report.acknowledged_at ? new Date(report.acknowledged_at).toLocaleString() : '—'}</li>
+                                    <li>Responded: {report.responded_at ? new Date(report.responded_at).toLocaleString() : '—'}</li>
+                                    <li>Resolved: {report.resolved_at ? new Date(report.resolved_at).toLocaleString() : '—'}</li>
+                                </ul>
+                            </div>
+                        )}
 
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase">Description / Details</p>
@@ -127,6 +140,10 @@ export default function Reports({ reports, filters }) {
         }, { preserveScroll: true });
     };
 
+    const handleAcknowledge = (reportId) => {
+        router.post(route('vawc.reports.acknowledge', reportId), {}, { preserveScroll: true });
+    };
+
     return (
         <VAWCLayout>
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 min-h-[500px]">
@@ -204,6 +221,15 @@ export default function Reports({ reports, filters }) {
                                         </td>
                                         <td className="py-4 px-2 text-center">
                                             <div className="flex justify-center gap-2">
+                                                {isCritical && !report.acknowledged_at && (
+                                                    <button
+                                                        onClick={() => handleAcknowledge(report.id)}
+                                                        className="bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-800 transition animate-pulse"
+                                                    >
+                                                        ACKNOWLEDGE
+                                                    </button>
+                                                )}
+
                                                 <button
                                                     onClick={() => setSelectedReport(report)}
                                                     className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700 transition"
@@ -228,6 +254,7 @@ export default function Reports({ reports, filters }) {
                             )}
                         </tbody>
                     </table>
+                    <PaginationLinks paginator={reports} />
                 </div>
             </div>
 

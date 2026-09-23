@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BlotterStatus;
+use App\Exceptions\InvalidStatusTransitionException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -26,19 +27,15 @@ class BlotterRecord extends Model
     public function attachments() { return $this->hasMany(Attachment::class, 'blotter_id'); }
     public function statusHistory() { return $this->hasMany(CaseStatusHistory::class)->latest('id'); }
 
+    // Scopes
+    public function scopeForBarangay($query, $barangayId) { return $query->where('barangay_id', $barangayId); }
+    public function scopeResolved($query) { return $query->where('status', BlotterStatus::Resolved); }
+    public function scopeEscalatedToCourt($query) { return $query->where('status', BlotterStatus::EscalatedToCourt); }
+
     // Utility
     public function isVawcCase()
     {
         return $this->vawcDetail()->exists();
-    }
-
-    public function scheduleMediation($date, $meetingNumber = 1)
-    {
-        return $this->mediations()->create([
-            'scheduled_date' => $date,
-            'meeting_number' => $meetingNumber,
-            'status' => 'Scheduled'
-        ]);
     }
 
     /**
@@ -67,7 +64,7 @@ class BlotterRecord extends Model
         $from = $this->status;
 
         if (!$from->canTransitionTo($to)) {
-            throw new \DomainException("Case #{$this->case_number} cannot move from \"{$from->value}\" to \"{$to->value}\". Reopen the case first if it is closed.");
+            throw new InvalidStatusTransitionException("Case #{$this->case_number} cannot move from \"{$from->value}\" to \"{$to->value}\". Reopen the case first if it is closed.");
         }
 
         DB::transaction(function () use ($from, $to, $actor, $note) {
@@ -89,7 +86,7 @@ class BlotterRecord extends Model
     public function reopen(BlotterStatus $to, User $actor, string $reason): void
     {
         if (!$this->status->isTerminal()) {
-            throw new \DomainException("Case #{$this->case_number} is not closed, so it cannot be reopened.");
+            throw new InvalidStatusTransitionException("Case #{$this->case_number} is not closed, so it cannot be reopened.");
         }
 
         DB::transaction(function () use ($to, $actor, $reason) {

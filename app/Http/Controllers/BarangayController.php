@@ -40,8 +40,7 @@ class BarangayController extends Controller
 
     public function destroy(Barangay $barangay)
     {
-        // Prevent deletion if the barangay has active relationships
-        if ($barangay->users()->exists() || $barangay->reports()->exists() || $barangay->blotters()->exists()) {
+        if ($barangay->hasDependents()) {
             return redirect()->back()->withErrors([
                 'error' => 'Cannot delete barangay because it contains active users or records.'
             ]);

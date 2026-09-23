@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ServiceRequestStatus;
 use App\Exports\ServiceRequestsExport;
+use App\Http\Requests\ExportFilterRequest;
+use App\Http\Requests\ServiceRequest\AssignAssetRequest;
+use App\Http\Requests\ServiceRequest\StoreServiceRequestRequest;
 use App\Models\ServiceRequest;
 use App\Models\BarangayAsset;
 use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -35,13 +40,9 @@ class ServiceRequestController extends Controller
         ]);
     }
 
-    public function export(Request $request)
+    public function export(ExportFilterRequest $request)
     {
-        $validated = $request->validate([
-            'status' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        $validated = $request->validated();
 
         $query = ServiceRequest::forBarangay(Auth::user()->barangay_id)
             ->with(['requester', 'asset']);
@@ -64,12 +65,9 @@ class ServiceRequestController extends Controller
         return Excel::download(new ServiceRequestsExport($serviceRequests), $filename);
     }
 
-    public function store(Request $request)
+    public function store(StoreServiceRequestRequest $request)
     {
-        $validated = $request->validate([
-            'service_type' => 'required|string',
-            'description' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
@@ -79,19 +77,17 @@ class ServiceRequestController extends Controller
             'barangay_id'  => $user->barangay_id,
             'service_type' => $validated['service_type'],
             'description'  => $validated['description'],
-            'status'       => 'Pending',
+            'status'       => ServiceRequestStatus::Pending,
         ]);
 
         return back()->with('success', 'Service requested successfully. Awaiting dispatch.');
     }
 
-    public function assignAsset(Request $request, ServiceRequest $serviceRequest)
+    public function assignAsset(AssignAssetRequest $request, ServiceRequest $serviceRequest)
     {
         abort_unless($serviceRequest->barangay_id === Auth::user()->barangay_id, 404);
 
-        $validated = $request->validate([
-            'asset_id' => 'required|exists:barangay_assets,id',
-        ]);
+        $validated = $request->validated();
 
         $asset = BarangayAsset::where('barangay_id', Auth::user()->barangay_id)
             ->findOrFail($validated['asset_id']);
@@ -100,12 +96,11 @@ class ServiceRequestController extends Controller
             return back()->withErrors(['asset_id' => 'This asset is currently deployed.']);
         }
 
-        $serviceRequest->update([
-            'assigned_asset_id' => $asset->id,
-            'status' => 'In Progress'
-        ]);
-
-        $asset->update(['is_available' => false]);
+        DB::transaction(function () use ($serviceRequest, $asset) {
+            $serviceRequest->update(['assigned_asset_id' => $asset->id]);
+            $serviceRequest->transitionStatus(ServiceRequestStatus::InProgress, Auth::user(), "Asset \"{$asset->asset_name}\" dispatched.");
+            $asset->update(['is_available' => false]);
+        });
 
         SystemLog::record('UPDATE', 'Service Request', "Dispatched asset \"{$asset->asset_name}\" for service request #{$serviceRequest->id}.");
 
@@ -116,14 +111,16 @@ class ServiceRequestController extends Controller
     {
         abort_unless($serviceRequest->barangay_id === Auth::user()->barangay_id, 404);
 
-        $serviceRequest->update(['status' => 'Completed']);
+        DB::transaction(function () use ($serviceRequest) {
+            $serviceRequest->transitionStatus(ServiceRequestStatus::Completed, Auth::user(), 'Service completed.');
 
-        if ($serviceRequest->assigned_asset_id) {
-            $asset = BarangayAsset::find($serviceRequest->assigned_asset_id);
-            if ($asset) {
-                $asset->update(['is_available' => true]);
+            if ($serviceRequest->assigned_asset_id) {
+                $asset = BarangayAsset::find($serviceRequest->assigned_asset_id);
+                if ($asset) {
+                    $asset->update(['is_available' => true]);
+                }
             }
-        }
+        });
 
         SystemLog::record('UPDATE', 'Service Request', "Completed service request #{$serviceRequest->id}.");
 

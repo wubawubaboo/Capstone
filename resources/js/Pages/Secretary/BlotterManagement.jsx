@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import GenerateReportModal from '@/Components/GenerateReportModal';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 export default function BlotterManagement({ blotters }) {
     const records = blotters?.data || [];
@@ -82,7 +83,7 @@ export default function BlotterManagement({ blotters }) {
                                     </td>
                                     <td className="py-3 px-4">
                                         <Link
-                                            href={route('secretary.case-history', { id: row.id })}
+                                            href={route('secretary.case-history', { blotter: row.id })}
                                             className="bg-[#0a2342] text-white px-5 py-1.5 rounded text-xs font-medium hover:bg-slate-800 inline-block"
                                         >
                                             View
@@ -96,6 +97,7 @@ export default function BlotterManagement({ blotters }) {
                             )}
                         </tbody>
                     </table>
+                    <PaginationLinks paginator={blotters} />
                 </div>
             </div>
 

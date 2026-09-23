@@ -40,6 +40,13 @@ return [
         'sender_id' => env('PHILSMS_SENDER_ID', 'PhilSMS'),
     ],
 
+    'osm' => [
+        // Nominatim's usage policy (operations.osmfoundation.org/policies/nominatim)
+        // requires a genuine, identifying contact in the User-Agent. A missing or
+        // placeholder value gets requests blocked outright (HTTP 403).
+        'contact' => env('OSM_CONTACT_EMAIL'),
+    ],
+
     'libreoffice' => [
         // Path/command for the LibreOffice CLI used to convert merged .docx
         // document-type templates to PDF with full layout fidelity (floating

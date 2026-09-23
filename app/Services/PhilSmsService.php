@@ -24,57 +24,56 @@ class PhilSmsService
 
     public function sendSms($recipient, $message): bool
     {
-        return true;
-        // if (empty($this->token)) {
-        //     Log::error('PhilSMS: no API token configured; message not sent.', ['recipient' => $recipient]);
-        //     return false;
-        // }
+        if (empty($this->token)) {
+            Log::error('PhilSMS: no API token configured; message not sent.', ['recipient' => $recipient]);
+            return false;
+        }
 
-        // $recipient = $this->normalizeRecipient($recipient);
+        $recipient = $this->normalizeRecipient($recipient);
 
-        // for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
-        //     try {
-        //         $response = Http::withToken($this->token)->post($this->baseUrl, [
-        //             'recipient' => $recipient,
-        //             'sender_id' => $this->senderId,
-        //             'type' => 'plain',
-        //             'message' => $message,
-        //         ]);
+        for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
+            try {
+                $response = Http::withToken($this->token)->post($this->baseUrl, [
+                    'recipient' => $recipient,
+                    'sender_id' => $this->senderId,
+                    'type' => 'plain',
+                    'message' => $message,
+                ]);
 
-        //         if ($response->successful()) {
-        //             return true;
-        //         }
+                if ($response->successful()) {
+                    return true;
+                }
 
-        //         if ($response->clientError()) {
-        //             Log::error('PhilSMS: request rejected, not retrying.', [
-        //                 'recipient' => $recipient,
-        //                 'status' => $response->status(),
-        //                 'body' => $response->body(),
-        //             ]);
+                if ($response->clientError()) {
+                    Log::error('PhilSMS: request rejected, not retrying.', [
+                        'recipient' => $recipient,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
 
-        //             return false;
-        //         }
+                    return false;
+                }
 
-        //         Log::warning("PhilSMS: server error on attempt {$attempt}/" . self::MAX_ATTEMPTS . '.', [
-        //             'recipient' => $recipient,
-        //             'status' => $response->status(),
-        //         ]);
-        //     } catch (ConnectionException $e) {
-        //         Log::warning("PhilSMS: connection error on attempt {$attempt}/" . self::MAX_ATTEMPTS . ": {$e->getMessage()}", [
-        //             'recipient' => $recipient,
-        //         ]);
-        //     }
+                Log::warning("PhilSMS: server error on attempt {$attempt}/" . self::MAX_ATTEMPTS . '.', [
+                    'recipient' => $recipient,
+                    'status' => $response->status(),
+                ]);
+            } catch (ConnectionException $e) {
+                Log::warning("PhilSMS: connection error on attempt {$attempt}/" . self::MAX_ATTEMPTS . ": {$e->getMessage()}", [
+                    'recipient' => $recipient,
+                ]);
+            }
 
-        //     if ($attempt < self::MAX_ATTEMPTS) {
-        //         usleep(self::RETRY_DELAY_US * $attempt);
-        //     }
-        // }
+            if ($attempt < self::MAX_ATTEMPTS) {
+                usleep(self::RETRY_DELAY_US * $attempt);
+            }
+        }
 
-        // Log::error('PhilSMS: failed to deliver message after ' . self::MAX_ATTEMPTS . ' attempts.', [
-        //     'recipient' => $recipient,
-        // ]);
+        Log::error('PhilSMS: failed to deliver message after ' . self::MAX_ATTEMPTS . ' attempts.', [
+            'recipient' => $recipient,
+        ]);
 
-        // return false;
+        return false;
     }
 
     private function normalizeRecipient(string $recipient): string
