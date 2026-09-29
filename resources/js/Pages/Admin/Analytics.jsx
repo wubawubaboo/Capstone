@@ -1,43 +1,32 @@
 import React from 'react';
-import { Head } from '@inertiajs/react';
-import { Bar, Doughnut } from 'react-chartjs-2';
-import 'chart.js/auto';
+import IncidentDashboard from '@/Components/Analytics/IncidentDashboard';
 
-export default function Analytics({ incidentTrends, transactionVolumes }) {
-    const incidentData = {
-        labels: incidentTrends.map(item => item.type),
-        datasets: [{
-            label: 'Total Incidents',
-            data: incidentTrends.map(item => item.total),
-            backgroundColor: '#ef4444',
-        }]
-    };
-
-    const transactionData = {
-        labels: transactionVolumes.map(item => item.status),
-        datasets: [{
-            label: 'Document Requests',
-            data: transactionVolumes.map(item => item.total),
-            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-        }]
-    };
+export default function Analytics({ dashboard, barangays, selectedBarangay, boundary }) {
+    const selected = barangays.find((barangay) => barangay.id === selectedBarangay);
 
     return (
-        <>
-            <Head title="City-Level Analytics" />
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Macro-Level Analytics Dashboard</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white p-6 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-4">Incident Trends</h3>
-                        <Bar data={incidentData} />
-                    </div>
-                    <div className="bg-white p-6 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-4">Transaction Volumes</h3>
-                        <Doughnut data={transactionData} />
-                    </div>
-                </div>
-            </div>
-        </>
+        <IncidentDashboard
+            dashboard={dashboard}
+            title="City-Level Analytics"
+            heading={selected ? `Barangay ${selected.name}` : 'Citywide overview'}
+            scope="All barangays' resident reports and blotter cases, excluding confidential VAWC records"
+            routeName="admin.analytics"
+            params={{ barangay: selectedBarangay }}
+            boundary={boundary}
+            onSelectBarangay={(barangay, visit) => visit({ barangay: barangay.id })}
+            filters={(visit) => (
+                <select
+                    value={selectedBarangay ?? ''}
+                    onChange={(e) => visit({ barangay: e.target.value || null })}
+                    aria-label="Barangay"
+                    className="border border-slate-300 rounded-lg bg-white text-xs font-semibold text-slate-700 py-2 pl-3 pr-8"
+                >
+                    <option value="">All barangays</option>
+                    {barangays.map((barangay) => (
+                        <option key={barangay.id} value={barangay.id}>{barangay.name}</option>
+                    ))}
+                </select>
+            )}
+        />
     );
 }

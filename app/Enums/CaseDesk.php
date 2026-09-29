@@ -4,12 +4,6 @@ namespace App\Enums;
 
 use Illuminate\Database\Eloquent\Builder;
 
-/**
- * The two desks that handle blotter cases. Both run the same case workflow
- * (App\Http\Controllers\CaseDeskController); this enum holds everything that
- * differs between them: which cases they see, their pages and routes, and
- * the wording used in status history and the audit log.
- */
 enum CaseDesk: string
 {
     case Secretary = 'secretary';

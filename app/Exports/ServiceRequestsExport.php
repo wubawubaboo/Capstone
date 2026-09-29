@@ -39,7 +39,7 @@ class ServiceRequestsExport implements FromCollection, WithHeadings, WithMapping
             $request->requester?->full_name ?: 'Unknown',
             $request->requester?->address ?: 'N/A',
             $request->service_type,
-            $request->status,
+            $request->status?->value,
             $request->asset?->asset_name ?: 'N/A',
             optional($request->created_at)->format('Y-m-d H:i'),
         ];

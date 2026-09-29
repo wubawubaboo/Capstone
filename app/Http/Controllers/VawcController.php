@@ -6,7 +6,11 @@ use App\Actions\Vawc\FileVawcCase;
 use App\Enums\CaseDesk;
 use App\Http\Requests\Vawc\StoreVawcBlotterRequest;
 use App\Models\BlotterRecord;
+use App\Models\Report;
 use App\Models\SystemLog;
+use App\Services\IncidentAnalytics;
+use App\Support\AnalyticsPeriod;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -47,16 +51,21 @@ class VawcController extends CaseDeskController
         return redirect()->route('vawc.blotters')->with('success', 'VAWC incident record created successfully.');
     }
 
-    public function analytics()
+    /**
+     * No hotspot map here: plotted VAWC reports would point to victims' homes
+     * on a page that gets printed and presented.
+     */
+    public function analytics(Request $request, IncidentAnalytics $analytics)
     {
-        $cases = fn () => $this->desk()->scopeCases(BlotterRecord::forBarangay(Auth::user()->barangay_id));
+        $user = $request->user();
 
         return Inertia::render('VAWC/Analytics', [
-            'totalVawcCases'       => $cases()->count(),
-            'settledCases'         => $cases()->resolved()->count(),
-            'escalatedCases'       => $cases()->escalatedToCourt()->count(),
-            'incidentDistribution' => $cases()->select('incident_type as name', DB::raw('count(*) as value'))->groupBy('incident_type')->get(),
-            'caseStatusData'       => $cases()->select('status as name', DB::raw('count(*) as value'))->groupBy('status')->get(),
+            'dashboard' => $analytics->dashboard(
+                Report::visibleTo($user),
+                $this->desk()->scopeCases(BlotterRecord::forBarangay($user->barangay_id)),
+                AnalyticsPeriod::fromRequest($request),
+            ),
+            'barangayName' => $user->barangay?->name,
         ]);
     }
 }

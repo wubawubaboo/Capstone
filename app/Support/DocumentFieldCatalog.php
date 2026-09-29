@@ -5,12 +5,6 @@ namespace App\Support;
 use App\Models\DocumentRequest;
 use Illuminate\Support\Facades\Auth;
 
-/**
- * Single source of truth for the requester/document fields secretaries can
- * map onto a document template (docx merge tokens or image field boxes).
- * Keys here must match the ${key} tokens secretaries type into .docx
- * templates and the field_key values stored in field_positions_json.
- */
 class DocumentFieldCatalog
 {
     public static function fields(): array

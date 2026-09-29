@@ -9,16 +9,6 @@ use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mime\MimeTypes;
 
-/**
- * Stores sensitive uploads (resident ID photos, selfies, incident report
- * attachments) encrypted with APP_KEY on the private disk, and decrypts them
- * only when an authorized controller action serves them.
- *
- * Encrypted files are named "<random>.<original extension>.enc", so the
- * content type can be recovered without decrypting. Files stored before
- * encryption was introduced have no ".enc" suffix and are served as-is until
- * `php artisan files:encrypt-sensitive` converts them.
- */
 class SecureFileStore
 {
     private const SUFFIX = '.enc';

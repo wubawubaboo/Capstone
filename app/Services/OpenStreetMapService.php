@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Log;
 
 class OpenStreetMapService
 {
-    /**
-     * Convert GPS coordinates to a physical address using OSM Nominatim.
-     */
     public function reverseGeocode($latitude, $longitude)
     {
         try {

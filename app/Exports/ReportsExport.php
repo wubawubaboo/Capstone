@@ -39,7 +39,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, Should
             $report->user?->phone_number ?: 'N/A',
             $report->incident_type === 'SOS_CRITICAL' ? 'URGENT SOS' : $report->incident_type,
             $report->description,
-            $report->status,
+            $report->status?->value,
         ];
     }
 }

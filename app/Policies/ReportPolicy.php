@@ -21,7 +21,6 @@ class ReportPolicy
         return $user->id !== $report->user_id && $this->handledByUsersDesk($user, $report);
     }
 
-    /** Filed in the staff member's barangay, and routed to their desk. */
     private function handledByUsersDesk(User $user, Report $report): bool
     {
         return $report->barangay_id !== null

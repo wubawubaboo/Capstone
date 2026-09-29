@@ -36,9 +36,9 @@ export default function SecretaryLayout({ children }) {
     };
 
     return (
-        <div className="flex min-h-screen bg-slate-100 font-sans text-gray-800 relative">
+        <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible bg-slate-100 font-sans text-gray-800 relative">
             {/* Sidebar */}
-            <aside className="w-64 bg-[#0a2342] text-white flex flex-col justify-between p-6 shrink-0 z-10">
+            <aside className="w-64 bg-[#0a2342] text-white flex flex-col justify-between p-6 shrink-0 overflow-y-auto z-10 print:hidden">
                 <div>
                     <h1 className="text-xl font-bold tracking-wider mb-8 uppercase border-b border-slate-700 pb-4">
                         Secretary
@@ -81,7 +81,7 @@ export default function SecretaryLayout({ children }) {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 p-8 overflow-y-auto z-0">{children}</main>
+            <main scroll-region="" className="flex-1 p-8 overflow-y-auto z-0 print:overflow-visible">{children}</main>
 
             {/* Real-Time SOS Modal Overlay */}
             {sosAlert && (

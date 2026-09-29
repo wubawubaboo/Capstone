@@ -2,83 +2,56 @@
 
 namespace App\Http\Controllers;
 
-use Inertia\Inertia;
-use App\Models\Report;
+use App\Enums\CaseDesk;
+use App\Models\BlotterRecord;
 use App\Models\DocumentRequest;
+use App\Models\Report;
 use App\Models\ServiceRequest;
-use App\Models\MediationSchedule;
+use App\Services\IncidentAnalytics;
+use App\Support\AnalyticsPeriod;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
+/** The secretary desk's incident monitoring dashboard. */
 class AnalyticsController extends Controller
 {
-    private const HEATMAP_DAYS = 90;
-    private const HEATMAP_MAX_POINTS = 2000;
+    public function __construct(private IncidentAnalytics $analytics) {}
 
     public function index(Request $request)
     {
-        $barangayId = Auth::user()->barangay_id;
-        $heatmapSince = now()->subDays(self::HEATMAP_DAYS);
+        $user = $request->user();
+        $period = AnalyticsPeriod::fromRequest($request);
+        $window = [$period->start, $period->end];
 
-        $heatmapQuery = fn () => Report::whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->where('created_at', '>=', $heatmapSince)
-            ->visibleTo(Auth::user());
-
-        $latestReport = $heatmapQuery()->latest()->first();
-
-        $mapLocation = null;
-        if ($latestReport) {
-            $mapLocation = [
-                'incident_type' => $latestReport->incident_type,
-                'date' => $latestReport->created_at->format('M d, Y h:i A'),
-                'is_critical' => $latestReport->incident_type === 'SOS_CRITICAL'
-            ];
-        }
-
-        $heatmapData = $heatmapQuery()
-            ->latest()
-            ->limit(self::HEATMAP_MAX_POINTS)
-            ->get(['latitude', 'longitude', 'incident_type'])
-            ->map(function ($report) {
-                return [
-                    (float) $report->latitude,
-                    (float) $report->longitude,
-                    $report->incident_type === 'SOS_CRITICAL' ? 2 : 1
-                ];
-            })->values();
-
-        $incidentTrends = Report::visibleTo(Auth::user())
-            ->select('incident_type', DB::raw('count(*) as count'))
-            ->groupBy('incident_type')
-            ->get();
+        $dashboard = $this->analytics->dashboard(
+            Report::visibleTo($user),
+            CaseDesk::Secretary->scopeCases(BlotterRecord::forBarangay($user->barangay_id)),
+            $period,
+            ['map' => true, 'sos' => true],
+        );
 
         $documentVolumes = DocumentRequest::join('document_types', 'document_requests.document_type_id', '=', 'document_types.id')
-            ->where('document_requests.barangay_id', $barangayId)
+            ->where('document_requests.barangay_id', $user->barangay_id)
+            ->whereBetween('document_requests.created_at', $window)
             ->select('document_types.name', DB::raw('count(*) as count'))
             ->groupBy('document_types.name')
+            ->orderByDesc('count')
             ->get();
 
-        $serviceStats = ServiceRequest::where('barangay_id', $barangayId)
-            ->select('service_type', DB::raw('count(*) as count'))
+        $serviceStats = ServiceRequest::where('barangay_id', $user->barangay_id)
+            ->whereBetween('created_at', $window)
+            ->select('service_type as name', DB::raw('count(*) as count'))
             ->groupBy('service_type')
-            ->get();
-
-        $mediationStats = MediationSchedule::whereHas('blotter', function ($q) use ($barangayId) {
-                $q->where('barangay_id', $barangayId)->whereDoesntHave('vawcDetail');
-            })
-            ->select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
+            ->orderByDesc('count')
             ->get();
 
         return Inertia::render('Secretary/Analytics', [
-            'mapLocation' => $mapLocation,
-            'heatmapData' => $heatmapData,
-            'incidentTrends' => $incidentTrends,
+            'dashboard' => $dashboard,
+            'barangayName' => $user->barangay?->name,
+            'boundary' => $user->barangay?->boundary,
             'documentVolumes' => $documentVolumes,
             'serviceStats' => $serviceStats,
-            'mediationStats' => $mediationStats,
         ]);
     }
 }

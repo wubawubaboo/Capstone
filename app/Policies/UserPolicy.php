@@ -7,7 +7,6 @@ use App\Models\User;
 
 class UserPolicy
 {
-    /** Secretary viewing a resident's ID/selfie verification uploads. */
     public function viewVerificationDocuments(User $actor, User $target): bool
     {
         return $actor->role === Role::Secretary
@@ -15,13 +14,11 @@ class UserPolicy
             && $target->barangay_id === $actor->barangay_id;
     }
 
-    /** Secretary managing (update/destroy) a resident account in their own barangay. */
     public function manageResident(User $actor, User $target): bool
     {
         return $target->role === Role::Resident && $target->barangay_id === $actor->barangay_id;
     }
 
-    /** Secretary managing (update/destroy) a barangay_police account in their own barangay. */
     public function managePolice(User $actor, User $target): bool
     {
         return $target->role === Role::BarangayPolice && $target->barangay_id === $actor->barangay_id;

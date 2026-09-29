@@ -7,10 +7,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Restricts a route group to one or more roles: `->middleware('role:secretary')`.
- * Registered as the `role` alias in bootstrap/app.php. Must run after `auth`.
- */
 class EnsureUserHasRole
 {
     public function handle(Request $request, Closure $next, string ...$roles): Response

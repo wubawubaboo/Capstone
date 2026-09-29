@@ -38,7 +38,7 @@ class BlottersExport implements FromCollection, WithHeadings, WithMapping, Shoul
             $blotter->complainant_name ?: ($blotter->report?->user?->full_name ?: 'Anonymous'),
             $blotter->receiver?->full_name ?: ($blotter->receiver_name ?: 'Unknown'),
             $blotter->incident_type ?: ($blotter->report?->incident_type ?: 'N/A'),
-            $blotter->status,
+            $blotter->status?->value,
             optional($blotter->official_entry_date ?? $blotter->created_at)->format('Y-m-d H:i'),
         ];
     }

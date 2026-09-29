@@ -38,7 +38,7 @@ class DocumentRequestsExport implements FromCollection, WithHeadings, WithMappin
             $request->requester?->phone_number ?: 'N/A',
             $request->documentType?->name ?: 'Document',
             $request->purpose,
-            $request->status,
+            $request->status?->value,
             optional($request->created_at)->format('Y-m-d H:i'),
         ];
     }

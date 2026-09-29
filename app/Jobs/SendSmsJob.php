@@ -9,11 +9,6 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Sends one SMS to one recipient. Every outgoing SMS goes through this job,
- * one job per recipient, so a retry only ever re-sends to the person whose
- * message actually failed.
- */
 class SendSmsJob implements ShouldQueue
 {
     use Queueable;

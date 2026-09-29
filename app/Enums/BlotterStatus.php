@@ -10,11 +10,6 @@ enum BlotterStatus: string
     case EscalatedToCourt = 'Escalated to Court';
 
     /**
-     * Statuses this case can move to directly. Resolved/EscalatedToCourt are
-     * terminal — moving out of them requires the explicit reopen() action
-     * instead of an ordinary transition, so closed cases can't be silently
-     * changed without a recorded reason.
-     *
      * @return self[]
      */
     public function allowedTransitions(): array

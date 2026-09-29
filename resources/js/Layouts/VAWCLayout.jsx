@@ -12,8 +12,8 @@ export default function VAWCLayout({ children }) {
     ];
 
     return (
-        <div className="flex min-h-screen bg-rose-50/40 font-sans text-slate-800">
-            <aside className="w-64 bg-[#3B122D] text-white flex flex-col justify-between p-6 shrink-0 shadow-lg">
+        <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible bg-rose-50/40 font-sans text-slate-800">
+            <aside className="w-64 bg-[#3B122D] text-white flex flex-col justify-between p-6 shrink-0 overflow-y-auto shadow-lg print:hidden">
                 <div>
                     <h1 className="text-lg font-bold tracking-wider mb-8 uppercase border-b border-rose-900/50 pb-4 text-rose-200">
                         VAWC Desk
@@ -56,7 +56,7 @@ export default function VAWCLayout({ children }) {
                 </div>
             </aside>
 
-            <main className="flex-1 p-8 overflow-y-auto">{children}</main>
+            <main scroll-region="" className="flex-1 p-8 overflow-y-auto print:overflow-visible">{children}</main>
         </div>
     );
 }

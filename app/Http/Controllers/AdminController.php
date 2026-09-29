@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CaseDesk;
 use App\Enums\Role;
 use Inertia\Inertia;
 use App\Http\Requests\Admin\StoreStaffAccountRequest;
@@ -9,22 +10,39 @@ use App\Http\Requests\Admin\UpdateStaffAccountRequest;
 use App\Models\User;
 use App\Models\SystemLog;
 use App\Models\Report;
-use App\Models\DocumentRequest;
+use App\Models\BlotterRecord;
 use App\Models\Barangay;
+use App\Services\IncidentAnalytics;
+use App\Support\AnalyticsPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
-    public function analytics()
+    /**
+     * Citywide incident monitoring, optionally narrowed to one barangay with
+     * `?barangay=`. VAWC-flagged reports and VAWC cases are left out entirely:
+     * they are confidential to each barangay's VAWC desk.
+     */
+    public function analytics(Request $request, IncidentAnalytics $analytics)
     {
-        $incidentTrends = Report::selectRaw('incident_type as type, count(*) as total')->groupBy('incident_type')->get();
-        $transactionVolumes = DocumentRequest::selectRaw('status, count(*) as total')->groupBy('status')->get();
+        $barangay = Barangay::find($request->integer('barangay') ?: null);
+
+        $reports = Report::where('is_vawc', false)
+            ->when($barangay, fn ($query) => $query->forBarangay($barangay->id));
+        $cases = CaseDesk::Secretary->scopeCases(BlotterRecord::query())
+            ->when($barangay, fn ($query) => $query->forBarangay($barangay->id));
 
         return Inertia::render('Admin/Analytics', [
-            'incidentTrends' => $incidentTrends,
-            'transactionVolumes' => $transactionVolumes
+            'dashboard' => $analytics->dashboard($reports, $cases, AnalyticsPeriod::fromRequest($request), [
+                'map' => true,
+                'sos' => true,
+                'barangays' => !$barangay,
+            ]),
+            'barangays' => Barangay::orderBy('name')->get(['id', 'name']),
+            'selectedBarangay' => $barangay?->id,
+            'boundary' => $barangay?->boundary,
         ]);
     }
 

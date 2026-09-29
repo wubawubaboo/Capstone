@@ -7,11 +7,6 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Sends a single SMS through PhilSMS. Don't call this directly from request
- * code: dispatch App\Jobs\SendSmsJob instead, which runs it on the queue and
- * retries temporary failures.
- */
 class PhilSmsService
 {
     protected $enabled;
@@ -26,12 +21,6 @@ class PhilSmsService
         $this->senderId = config('services.philsms.sender_id');
     }
 
-    /**
-     * Returns true when the message was accepted (or SMS is disabled and it
-     * was only logged), false when it can never be delivered as-is (no token,
-     * invalid number, rejected by the provider). Throws SmsDeliveryException
-     * for temporary failures that are worth retrying.
-     */
     public function sendSms(string $recipient, string $message): bool
     {
         if (!$this->enabled) {

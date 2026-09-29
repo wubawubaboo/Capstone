@@ -8,14 +8,6 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 
-/**
- * Writes sign-ins, sign-outs, failed sign-ins and lockouts to the audit log.
- * Registered automatically through Laravel's event discovery (each handle*
- * method's type-hint names the event it listens to).
- *
- * Failed and Lockout are fired by App\Http\Requests\Auth\LoginRequest. The
- * submitted password is never logged, only the phone number.
- */
 class LogAuthenticationEvents
 {
     public function handleLogin(Login $event): void
