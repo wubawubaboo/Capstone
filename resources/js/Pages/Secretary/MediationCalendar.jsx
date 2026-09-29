@@ -1,17 +1,26 @@
 import React, { useMemo, useState } from 'react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { monthParam, parseMonth } from '@/Components/calendarMonth';
 
-export default function MediationCalendar({ schedules = [] }) {
-    const [currentDate, setCurrentDate] = useState(new Date());
+export default function MediationCalendar({ month: monthProp, schedules = [], upcoming = [] }) {
     const [selectedDateEvents, setSelectedDateEvents] = useState(null);
 
+    // The server loads one month at a time; `month` is the one shown (YYYY-MM).
+    const currentDate = parseMonth(monthProp);
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-    const goToToday = () => setCurrentDate(new Date());
+    const showMonth = (date) => {
+        setSelectedDateEvents(null);
+        router.get(route('secretary.mediation-calendar'), { month: monthParam(date) }, {
+            only: ['month', 'schedules'],
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+    const prevMonth = () => showMonth(new Date(year, month - 1, 1));
+    const nextMonth = () => showMonth(new Date(year, month + 1, 1));
+    const goToToday = () => showMonth(new Date());
 
     // Helper: format party names
     const getParties = (blotter) => {
@@ -47,7 +56,7 @@ export default function MediationCalendar({ schedules = [] }) {
     const isCurrentMonthToday = todayDate.getFullYear() === year && todayDate.getMonth() === month;
 
     return (
-        <SecretaryLayout>
+        <>
             <Head title="Mediation Calendar" />
 
             <div className="space-y-6 max-w-7xl mx-auto">
@@ -142,10 +151,14 @@ export default function MediationCalendar({ schedules = [] }) {
                                                 const parties = getParties(item.blotter);
 
                                                 return (
-                                                    <Link
+                                                    <button
                                                         key={item.id}
-                                                        href={route('secretary.case-history', { blotter: item.blotter_record_id || item.blotter?.id })}
-                                                        className="block p-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition text-left cursor-pointer"
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedDateEvents({ day, events: dayEvents });
+                                                        }}
+                                                        className="block w-full p-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition text-left cursor-pointer"
                                                     >
                                                         <p className="text-[10px] font-bold text-blue-900 truncate">
                                                             {time} - {parties.complainant}
@@ -153,13 +166,17 @@ export default function MediationCalendar({ schedules = [] }) {
                                                         <p className="text-[9px] text-blue-700 font-medium truncate">
                                                             {item.blotter?.case_number || 'Blotter Case'} (Session #{item.meeting_number})
                                                         </p>
-                                                    </Link>
+                                                    </button>
                                                 );
                                             })}
 
                                             {dayEvents.length > 2 && (
                                                 <button
-                                                    onClick={() => setSelectedDateEvents({ day, events: dayEvents })}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedDateEvents({ day, events: dayEvents });
+                                                    }}
                                                     className="text-[10px] text-slate-500 font-bold hover:underline block text-left"
                                                 >
                                                     +{dayEvents.length - 2} more...
@@ -179,8 +196,8 @@ export default function MediationCalendar({ schedules = [] }) {
                         </h3>
 
                         <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
-                            {schedules.length > 0 ? (
-                                schedules.map((item) => {
+                            {upcoming.length > 0 ? (
+                                upcoming.map((item) => {
                                     const d = new Date(item.scheduled_date);
                                     const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
                                     const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -265,6 +282,6 @@ export default function MediationCalendar({ schedules = [] }) {
                     </div>
                 </div>
             )}
-        </SecretaryLayout>
+        </>
     );
 }

@@ -1,13 +1,12 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
-import VAWCLayout from '@/Layouts/VAWCLayout';
 import PaginationLinks from '@/Components/PaginationLinks';
 
 export default function BlotterManagement({ blotters }) {
     const records = blotters?.data || [];
 
     return (
-        <VAWCLayout>
+        <>
             <Head title="VAWC Incident Records" />
 
             <div className="flex justify-between items-center mb-6">
@@ -79,6 +78,6 @@ export default function BlotterManagement({ blotters }) {
                     <PaginationLinks paginator={blotters} />
                 </div>
             </div>
-        </VAWCLayout>
+        </>
     );
 }

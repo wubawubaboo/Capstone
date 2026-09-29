@@ -36,6 +36,9 @@ return [
     ],
 
     'philsms' => [
+        // Off by default so development never spends SMS credits; messages
+        // are written to the log instead. Set SMS_ENABLED=true in production.
+        'enabled' => env('SMS_ENABLED', false),
         'token' => env('PHILSMS_TOKEN'),
         'sender_id' => env('PHILSMS_SENDER_ID', 'PhilSMS'),
     ],

@@ -1,19 +1,24 @@
 import React from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import ResidentLayout from '@/Layouts/ResidentLayout';
+import { useSubmissionFeedback } from '@/Components/SubmissionFeedback';
 
 export default function ServiceRequest() {
     const { auth } = usePage().props;
     const user = auth?.user || {};
+    const { withFeedback } = useSubmissionFeedback();
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         service_type: '',
         description: '',
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('resident.services.store'));
+        post(route('resident.services.store'), withFeedback({
+            successTitle: 'Request Submitted',
+            trackable: true,
+            onSuccess: () => reset(),
+        }));
     };
 
     return (

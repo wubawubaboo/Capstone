@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
@@ -31,7 +32,7 @@ class CreateRootAdmin extends Command
             'full_name' => $name,
             'phone_number' => $phone,
             'password' => Hash::make($password),
-            'role' => 'admin',
+            'role' => Role::Admin,
             'is_verified' => true,
         ];
 

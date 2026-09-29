@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import ResidentAutocomplete from '@/Components/ResidentAutocomplete';
+import PendingReportPicker from '@/Components/PendingReportPicker';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function CreateBlotter({ pendingReports }) {
+export default function CreateBlotter({ selectedReport = null }) {
 
-    const queryParams = new URLSearchParams(window.location.search);
-    const initialReportId = queryParams.get('report_id') || '';
-
-    const [entryType, setEntryType] = useState(initialReportId ? 'existing' : 'walk-in');
+    const [entryType, setEntryType] = useState(selectedReport ? 'existing' : 'walk-in');
+    const [activeReport, setActiveReport] = useState(selectedReport);
     const [complainant, setComplainant] = useState(null);
     const [respondent, setRespondent] = useState(null);
 
     const { data, setData, post, processing, errors } = useForm({
-        report_id: initialReportId,
+        report_id: selectedReport?.id ?? '',
         complainant_id: '',
         incident_type: '',
         description: '',
@@ -22,15 +20,13 @@ export default function CreateBlotter({ pendingReports }) {
         receiver_name: '',
     });
 
-    const activeReport = pendingReports?.find(r => r.id === parseInt(data.report_id));
-
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('secretary.blotters.store'));
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <Head title="Create Blotter Record" />
             
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 p-8">
@@ -44,7 +40,7 @@ export default function CreateBlotter({ pendingReports }) {
                             <p className="text-sm text-slate-500">Transition an incident into the secure digital database[cite: 3].</p>
                         </div>
                     </div>
-                    {initialReportId && (
+                    {selectedReport && (
                         <Link href={route('secretary.reports')} className="text-sm font-bold text-slate-500 hover:text-slate-800">
                             Back to Incident Queue
                         </Link>
@@ -66,8 +62,9 @@ export default function CreateBlotter({ pendingReports }) {
                     <button 
                         type="button" 
                         onClick={() => { 
-                            setEntryType('walk-in'); 
-                            setData('report_id', ''); 
+                            setEntryType('walk-in');
+                            setActiveReport(null);
+                            setData('report_id', '');
                         }}
                         className={`px-4 py-2 rounded text-sm font-bold transition-colors ${entryType === 'walk-in' ? 'bg-[#0a2342] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
@@ -84,19 +81,19 @@ export default function CreateBlotter({ pendingReports }) {
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 mb-2">Select Pending Report</label>
-                                        <select 
-                                            value={data.report_id} 
-                                            onChange={e => setData('report_id', e.target.value)}
-                                            className="w-full border-slate-300 rounded shadow-sm focus:ring-[#0a2342] focus:border-[#0a2342] text-sm p-2.5"
-                                        >
-                                            <option value="">-- Select an Incident Report --</option>
-                                            {pendingReports?.map(report => (
-                                                <option key={report.id} value={report.id}>
-                                                    Report #{report.id} - {report.incident_type} ({report.user?.full_name})
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.report_id && <div className="text-red-500 text-xs mt-1">{errors.report_id}</div>}
+                                        <PendingReportPicker
+                                            searchUrl={route('secretary.reports.pending-search')}
+                                            selected={activeReport}
+                                            onSelect={(report) => {
+                                                setActiveReport(report);
+                                                setData('report_id', report.id);
+                                            }}
+                                            onClear={() => {
+                                                setActiveReport(null);
+                                                setData('report_id', '');
+                                            }}
+                                            error={errors.report_id}
+                                        />
                                     </div>
 
                                     {activeReport && (
@@ -221,6 +218,6 @@ export default function CreateBlotter({ pendingReports }) {
                     </div>
                 </form>
             </div>
-        </SecretaryLayout>
+        </>
     );
 }

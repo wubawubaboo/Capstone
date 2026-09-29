@@ -2,33 +2,37 @@
 
 // routes/console.php
 
-use Illuminate\Support\Facades\Schedule;
+use App\Enums\MediationStatus;
+use App\Jobs\SendSmsJob;
 use App\Models\MediationSchedule;
-use App\Services\PhilSmsService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schedule;
 
-Schedule::call(function (PhilSmsService $smsService) {
+// Two days before each mediation hearing, remind the complainant by SMS.
+// Only registered complainants have a phone number on file; respondents are
+// recorded by name only, so they can't be reminded this way.
+Schedule::call(function () {
     $targetDate = Carbon::now()->addDays(2)->toDateString();
 
-    $hearings = MediationSchedule::with(['blotter.barangay'])
+    $hearings = MediationSchedule::with(['blotter.barangay', 'blotter.complainant'])
         ->whereDate('scheduled_date', $targetDate)
-        ->where('status', 'scheduled') 
+        ->where('status', MediationStatus::Scheduled)
         ->get();
 
     foreach ($hearings as $hearing) {
+        $phone = $hearing->blotter->complainant?->phone_number;
+
+        if (!$phone) {
+            continue;
+        }
+
         $barangayName = $hearing->blotter->barangay->name ?? 'San Nicolas';
         $time = Carbon::parse($hearing->scheduled_date)->format('h:i A');
-        
-        $message = "Brgy. {$barangayName} Reminder: You have a scheduled mediation hearing on " . 
+
+        $message = "Brgy. {$barangayName} Reminder: You have a scheduled mediation hearing on " .
                    Carbon::parse($targetDate)->format('M d, Y') . " at {$time}. " .
                    "Please be present at the Barangay Hall.";
 
-        if ($hearing->blotter->complainant_phone) {
-            $smsService->sendSms($hearing->blotter->complainant_phone, $message);
-        }
-
-        if ($hearing->blotter->respondent_phone) {
-            $smsService->sendSms($hearing->blotter->respondent_phone, $message);
-        }
+        SendSmsJob::dispatch($phone, $message);
     }
-})->dailyAt('08:00');
+})->name('mediation-hearing-reminders')->dailyAt('08:00');

@@ -1,5 +1,4 @@
 import React from 'react';
-import VAWCLayout from '@/Layouts/VAWCLayout';
 
 export default function Analytics({
     totalVawcCases = 0,
@@ -9,7 +8,7 @@ export default function Analytics({
     caseStatusData = []
 }) {
     return (
-        <VAWCLayout>
+        <>
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -89,6 +88,6 @@ export default function Analytics({
                     </div>
                 </div>
             </div>
-        </VAWCLayout>
+        </>
     );
 }

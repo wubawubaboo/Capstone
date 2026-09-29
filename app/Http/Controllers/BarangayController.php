@@ -20,6 +20,27 @@ class BarangayController extends Controller
         ]);
     }
 
+    /** Public/resident hotlines page: barangay numbers come from each barangay's contact_number. */
+    public function hotlines(Request $request)
+    {
+        $userBarangayId = $request->user()?->barangay_id;
+
+        $barangays = Barangay::whereNotNull('contact_number')
+            ->where('contact_number', '!=', '')
+            ->orderBy('name')
+            ->get(['id', 'name', 'contact_number'])
+            // Show the viewer's own barangay first when logged in.
+            ->sortBy(fn ($b) => $b->id === $userBarangayId ? 0 : 1)
+            ->values();
+
+        return Inertia::render('Public/Hotlines', [
+            'barangayHotlines' => $barangays->map(fn ($b) => [
+                'name' => 'Brgy. ' . $b->name,
+                'number' => $b->contact_number,
+            ]),
+        ]);
+    }
+
     public function store(StoreBarangayRequest $request)
     {
         $barangay = Barangay::create($request->validated());

@@ -31,7 +31,7 @@ class FileVawcCase
 
         if (!empty($validated['report_id'])) {
             $report = Report::with('user')
-                ->forBarangay($barangayId)
+                ->visibleTo($actor)
                 ->findOrFail($validated['report_id']);
 
             $reportId = $report->id;

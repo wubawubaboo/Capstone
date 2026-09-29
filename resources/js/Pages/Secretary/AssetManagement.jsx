@@ -1,6 +1,5 @@
 import React from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import PaginationLinks from '@/Components/PaginationLinks';
 
 export default function AssetManagement({ assets }) {
@@ -27,7 +26,7 @@ export default function AssetManagement({ assets }) {
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <Head title="Asset Management" />
             
             <div className="mb-6">
@@ -120,6 +119,6 @@ export default function AssetManagement({ assets }) {
                     </div>
                 </div>
             </div>
-        </SecretaryLayout>
+        </>
     );
 }

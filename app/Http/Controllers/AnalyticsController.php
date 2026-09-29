@@ -24,7 +24,7 @@ class AnalyticsController extends Controller
         $heatmapQuery = fn () => Report::whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->where('created_at', '>=', $heatmapSince)
-            ->forBarangay($barangayId);
+            ->visibleTo(Auth::user());
 
         $latestReport = $heatmapQuery()->latest()->first();
 
@@ -49,7 +49,7 @@ class AnalyticsController extends Controller
                 ];
             })->values();
 
-        $incidentTrends = Report::forBarangay($barangayId)
+        $incidentTrends = Report::visibleTo(Auth::user())
             ->select('incident_type', DB::raw('count(*) as count'))
             ->groupBy('incident_type')
             ->get();

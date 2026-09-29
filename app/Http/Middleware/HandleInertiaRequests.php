@@ -43,7 +43,7 @@ public function share(Request $request): array
                 'user' => $user ? [
                     'id' => $user->id,
                     'full_name' => $user->full_name,
-                    'role' => $user->role,
+                    'role' => $user->role?->value,
                     'barangay' => $user->barangay ? [
                         'id' => $user->barangay->id,
                         'name' => $user->barangay->name,

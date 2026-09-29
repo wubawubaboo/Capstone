@@ -14,7 +14,14 @@ class DocumentRequest extends Model
     /** @use HasFactory<\Database\Factories\DocumentRequestFactory> */
     use HasFactory;
 
-protected $guarded = [];
+    protected $fillable = [
+        'requester_id',
+        'barangay_id',
+        'document_type_id',
+        'purpose',
+        'status',
+        'reference_no',
+    ];
 
     protected $casts = [
         'status' => DocumentRequestStatus::class,

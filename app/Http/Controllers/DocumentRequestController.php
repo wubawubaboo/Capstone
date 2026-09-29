@@ -11,7 +11,7 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\SystemLog;
 use App\Services\DocumentGeneration\DocumentGenerationService;
-use App\Services\PhilSmsService;
+use App\Jobs\SendSmsJob;
 use App\Support\DocumentFieldCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -76,18 +76,22 @@ class DocumentRequestController extends Controller
     {
         $validated = $request->validated();
 
-        DocumentRequest::create([
-            'requester_id' => Auth::user()->id,
-            'barangay_id' => Auth::user()->barangay_id,
-            'document_type_id' => $validated['document_type_id'],
-            'purpose' => $validated['purpose'],
-            'status' => DocumentRequestStatus::Pending,
-        ]);
+        DB::transaction(function () use ($validated) {
+            $documentRequest = DocumentRequest::create([
+                'requester_id' => Auth::user()->id,
+                'barangay_id' => Auth::user()->barangay_id,
+                'document_type_id' => $validated['document_type_id'],
+                'purpose' => $validated['purpose'],
+                'status' => DocumentRequestStatus::Pending,
+            ]);
+
+            SystemLog::record('CREATE', 'Documents', "Requested {$documentRequest->documentType->name} (Ref #{$documentRequest->reference_no}).");
+        });
 
         return back()->with('success', 'Document request submitted successfully. You will receive an SMS when it is ready.');
     }
 
-    public function updateStatus(UpdateDocumentRequestStatusRequest $request, DocumentRequest $documentRequest, PhilSmsService $smsService)
+    public function updateStatus(UpdateDocumentRequestStatusRequest $request, DocumentRequest $documentRequest)
     {
         abort_unless($documentRequest->barangay_id === Auth::user()->barangay_id, 404);
 
@@ -107,7 +111,7 @@ class DocumentRequestController extends Controller
             $residentName = $documentRequest->requester->full_name;
             $message = "Brgy. {$documentRequest->barangay->name}: Hello {$residentName}, your requested {$documentName} is now READY FOR PICKUP at the barangay hall. Please bring a valid ID.";
 
-            $smsService->sendSms($documentRequest->requester->phone_number, $message);
+            SendSmsJob::dispatch($documentRequest->requester->phone_number, $message);
         }
 
         return back()->with('success', 'Document status updated.');

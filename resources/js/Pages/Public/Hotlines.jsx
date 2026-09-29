@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 
-export default function Hotlines() {
+export default function Hotlines({ barangayHotlines = [] }) {
   const hotlines = [
-    { name: 'Barangay Hotline', number: '0905-165-2535' },
+    ...barangayHotlines,
     { name: 'PNP - Gapan', number: '0967-387-6877' },
     { name: 'BFP - Gapan', number: '0905-291-3329' },
   ];
@@ -20,7 +20,7 @@ export default function Hotlines() {
               <h2 className="font-bold text-blue-900 text-sm">{hotline.name}</h2>
               <p className="text-gray-500 text-xs mt-1">{hotline.number}</p>
             </div>
-            <a href={`tel:${hotline.number.replace(/-/g, '')}`} className="text-red-600 p-2">
+            <a href={`tel:${hotline.number.replace(/[^\d+]/g, '')}`} className="text-red-600 p-2">
               📞
             </a>
           </div>

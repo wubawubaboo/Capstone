@@ -1,6 +1,6 @@
 import React from 'react';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
-import AdminLayout from '@/Layouts/AdminLayout';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 const emptyForm = {
     full_name: '',
@@ -64,7 +64,7 @@ export default function AccountManagement({ staffAccounts, barangays }) {
     };
 
     return (
-        <AdminLayout>
+        <>
             <Head title="Account Management" />
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 space-y-8">
 
@@ -240,8 +240,8 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 bg-white">
-                            {staffAccounts && staffAccounts.length > 0 ? (
-                                staffAccounts.map((account) => (
+                            {staffAccounts.data.length > 0 ? (
+                                staffAccounts.data.map((account) => (
                                     <tr key={account.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">
                                             {account.full_name}
@@ -258,8 +258,8 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-slate-600">
                                             {account.barangay?.name || 'N/A'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-slate-600 capitalize">
-                                            {account.role.replace('_', ' ')}
+                                        <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                                            {account.role_label}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
@@ -292,7 +292,8 @@ export default function AccountManagement({ staffAccounts, barangays }) {
                         </tbody>
                     </table>
                 </div>
+                <PaginationLinks paginator={staffAccounts} />
             </div>
-        </AdminLayout>
+        </>
     );
 }

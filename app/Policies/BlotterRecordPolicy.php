@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Role;
 use App\Models\BlotterRecord;
 use App\Models\User;
 
@@ -21,6 +22,6 @@ class BlotterRecordPolicy
             return false;
         }
 
-        return $blotter->isVawcCase() ? $user->role === 'vawc' : $user->role === 'secretary';
+        return $user->role === ($blotter->isVawcCase() ? Role::Vawc : Role::Secretary);
     }
 }

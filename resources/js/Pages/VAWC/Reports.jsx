@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
-import VAWCLayout from '@/Layouts/VAWCLayout';
 import { Link, router } from '@inertiajs/react';
 import PaginationLinks from '@/Components/PaginationLinks';
 
 const ReportDetailsModal = ({ report, onClose }) => {
     if (!report) return null;
 
-    const isCritical = report.incident_type === 'SOS_CRITICAL';
-
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-slate-900 bg-opacity-60 z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200 flex flex-col">
 
                 {/* Modal Header */}
-                <div className={`p-4 border-b flex justify-between items-center ${isCritical ? 'bg-red-600 text-white' : 'bg-[#3B122D] text-white'}`}>
+                <div className="p-4 border-b flex justify-between items-center bg-[#3B122D] text-white">
                     <h3 className="text-lg font-black uppercase tracking-wider">
-                        {isCritical ? '🚨 URGENT SOS ALERT' : '📋 Incident Report Details'}
+                        📋 Incident Report Details
                     </h3>
                     <button onClick={onClose} className="text-white hover:text-gray-200 font-bold text-xl">&times;</button>
                 </div>
@@ -41,18 +38,6 @@ const ReportDetailsModal = ({ report, onClose }) => {
                             <p className="text-xs font-bold text-slate-500 uppercase">Date & Time</p>
                             <p className="text-base font-medium text-slate-900">{new Date(report.created_at).toLocaleString()}</p>
                         </div>
-
-                        {isCritical && (
-                            <div>
-                                <p className="text-xs font-bold text-slate-500 uppercase">Response Timeline</p>
-                                <ul className="text-sm text-slate-700 space-y-1 mt-1">
-                                    <li>Triggered: {new Date(report.created_at).toLocaleString()}</li>
-                                    <li>Acknowledged: {report.acknowledged_at ? new Date(report.acknowledged_at).toLocaleString() : '—'}</li>
-                                    <li>Responded: {report.responded_at ? new Date(report.responded_at).toLocaleString() : '—'}</li>
-                                    <li>Resolved: {report.resolved_at ? new Date(report.resolved_at).toLocaleString() : '—'}</li>
-                                </ul>
-                            </div>
-                        )}
 
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase">Description / Details</p>
@@ -140,17 +125,13 @@ export default function Reports({ reports, filters }) {
         }, { preserveScroll: true });
     };
 
-    const handleAcknowledge = (reportId) => {
-        router.post(route('vawc.reports.acknowledge', reportId), {}, { preserveScroll: true });
-    };
-
     return (
-        <VAWCLayout>
+        <>
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 min-h-[500px]">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Incident & Emergency Queue</h2>
-                        <p className="text-sm text-slate-500">Review resident-filed reports and log confidential VAWC cases.</p>
+                        <h2 className="text-xl font-bold text-slate-900">VAWC Report Queue</h2>
+                        <p className="text-sm text-slate-500">Reports residents flagged as VAWC. Review them and log confidential VAWC cases.</p>
                     </div>
 
                     <div className="relative">
@@ -186,10 +167,8 @@ export default function Reports({ reports, filters }) {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {data.length > 0 ? data.map((report) => {
-                                const isCritical = report.incident_type === 'SOS_CRITICAL' && report.status !== 'completed';
-
                                 return (
-                                    <tr key={report.id} className={isCritical ? 'bg-red-50' : 'hover:bg-rose-50/20'}>
+                                    <tr key={report.id} className="hover:bg-rose-50/20">
                                         <td className="py-4 px-2 text-slate-600">
                                             {new Date(report.created_at).toLocaleDateString()}
                                         </td>
@@ -198,7 +177,7 @@ export default function Reports({ reports, filters }) {
                                         </td>
                                         <td className="py-4 px-2">
                                             <div className="font-bold text-slate-800">
-                                                {isCritical ? <span className="text-red-600 animate-pulse">🚨 URGENT SOS</span> : report.incident_type}
+                                                {report.incident_type}
                                             </div>
                                             <div className="text-xs text-slate-500 truncate max-w-[200px]">
                                                 {report.description}
@@ -221,15 +200,6 @@ export default function Reports({ reports, filters }) {
                                         </td>
                                         <td className="py-4 px-2 text-center">
                                             <div className="flex justify-center gap-2">
-                                                {isCritical && !report.acknowledged_at && (
-                                                    <button
-                                                        onClick={() => handleAcknowledge(report.id)}
-                                                        className="bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-800 transition animate-pulse"
-                                                    >
-                                                        ACKNOWLEDGE
-                                                    </button>
-                                                )}
-
                                                 <button
                                                     onClick={() => setSelectedReport(report)}
                                                     className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700 transition"
@@ -262,6 +232,6 @@ export default function Reports({ reports, filters }) {
                 report={selectedReport}
                 onClose={() => setSelectedReport(null)}
             />
-        </VAWCLayout>
+        </>
     );
 }

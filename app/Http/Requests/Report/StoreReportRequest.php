@@ -16,6 +16,7 @@ class StoreReportRequest extends FormRequest
         return [
             'incident_type' => 'required|string|max:255',
             'description' => 'required|string',
+            'is_vawc' => 'nullable|boolean',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'attachment' => 'nullable|image|max:2048',

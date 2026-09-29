@@ -1,8 +1,9 @@
 import React from 'react';
-import { useForm, Link } from '@inertiajs/react';
+import { useForm, Link, usePage } from '@inertiajs/react';
 import ResidentPwaHead from '@/Components/ResidentPwaHead';
 
 export default function Login() {
+    const { flash } = usePage().props;
     const { data, setData, post, processing, errors } = useForm({
         phone_number: '',
         password: '',
@@ -20,9 +21,9 @@ export default function Login() {
                 <h1 className="text-2xl font-bold text-blue-900 mb-6 text-center">Resident Login</h1>
 
                 {/* SUCCESS MESSAGE FOR REGISTRATION */}
-                {errors.success && (
+                {flash?.success && (
                     <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded text-sm font-semibold text-center">
-                        {errors.success}
+                        {flash.success}
                     </div>
                 )}
 

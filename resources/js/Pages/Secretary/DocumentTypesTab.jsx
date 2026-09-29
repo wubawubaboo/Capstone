@@ -172,6 +172,13 @@ export default function DocumentTypesTab({ documentTypes, fieldCatalog }) {
         router.post(route('secretary.document-types.toggle-active', type.id), {}, { preserveScroll: true });
     };
 
+    const removeTemplate = (type) => {
+        const layoutWarning = type.template_type === 'image' ? ' Its field layout will also be cleared.' : '';
+        if (confirm(`Remove the auto-generation template from "${type.name}"?${layoutWarning} Requests for this document will need to be prepared manually until a new template is uploaded.`)) {
+            router.delete(route('secretary.document-types.destroy-template', type.id), { preserveScroll: true });
+        }
+    };
+
     const deleteType = (type) => {
         if (confirm(`Delete document type "${type.name}"? This cannot be undone.`)) {
             router.delete(route('secretary.document-types.destroy', type.id), { preserveScroll: true });
@@ -242,6 +249,14 @@ export default function DocumentTypesTab({ documentTypes, fieldCatalog }) {
                                             >
                                                 EDIT
                                             </button>
+                                            {type.template_type && (
+                                                <button
+                                                    onClick={() => removeTemplate(type)}
+                                                    className="bg-amber-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-amber-600"
+                                                >
+                                                    REMOVE TEMPLATE
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => deleteType(type)}
                                                 className="bg-red-700 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-800"

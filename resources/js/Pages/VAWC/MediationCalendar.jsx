@@ -1,15 +1,23 @@
-import React, { useMemo, useState } from 'react';
-import VAWCLayout from '@/Layouts/VAWCLayout';
-import { Head, Link } from '@inertiajs/react';
+import React, { useMemo } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { monthParam, parseMonth } from '@/Components/calendarMonth';
 
-export default function MediationCalendar({ schedules = [] }) {
-    const [currentDate, setCurrentDate] = useState(new Date());
+export default function MediationCalendar({ month: monthProp, schedules = [] }) {
+    // The server loads one month at a time; `month` is the one shown (YYYY-MM).
+    const currentDate = parseMonth(monthProp);
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-    const goToToday = () => setCurrentDate(new Date());
+    const showMonth = (date) => {
+        router.get(route('vawc.mediation-calendar'), { month: monthParam(date) }, {
+            only: ['month', 'schedules'],
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+    const prevMonth = () => showMonth(new Date(year, month - 1, 1));
+    const nextMonth = () => showMonth(new Date(year, month + 1, 1));
+    const goToToday = () => showMonth(new Date());
 
     const getParties = (blotter) => {
         if (!blotter) return { complainant: 'Confidential', respondent: 'N/A' };
@@ -43,7 +51,7 @@ export default function MediationCalendar({ schedules = [] }) {
     const isCurrentMonthToday = todayDate.getFullYear() === year && todayDate.getMonth() === month;
 
     return (
-        <VAWCLayout>
+        <>
             <Head title="VAWC Mediation Calendar" />
 
             <div className="space-y-6 max-w-7xl mx-auto">
@@ -139,6 +147,6 @@ export default function MediationCalendar({ schedules = [] }) {
                     </div>
                 </div>
             </div>
-        </VAWCLayout>
+        </>
     );
 }

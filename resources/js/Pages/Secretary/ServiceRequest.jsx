@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import GenerateReportModal from '@/Components/GenerateReportModal';
 import PaginationLinks from '@/Components/PaginationLinks';
 
@@ -50,7 +49,7 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <Head title="Service Requests" />
             
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 min-h-[500px]">
@@ -175,6 +174,6 @@ export default function ServiceRequests({ serviceRequests, availableAssets, filt
                 exportUrl={route('secretary.service-requests.export')}
                 extraParams={statusFilter ? { status: statusFilter } : {}}
             />
-        </SecretaryLayout>
+        </>
     );
 }

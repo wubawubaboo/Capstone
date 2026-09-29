@@ -11,7 +11,12 @@ class Barangay extends Model
     /** @use HasFactory<\Database\Factories\BarangayFactory> */
     use HasFactory;
 
-   protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'contact_number',
+        'boundary',
+        'boundary_fetched_at',
+    ];
 
    protected $casts = [
        'boundary' => 'array',

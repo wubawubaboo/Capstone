@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import ResidentPwaHead from '@/Components/ResidentPwaHead';
+import { SubmissionFeedbackProvider } from '@/Components/SubmissionFeedback';
 
 export default function ResidentLayout({ children }) {
-    // Define navigation items dynamically
     const navItems = [
         { 
             name: 'Home', 
@@ -23,6 +23,7 @@ export default function ResidentLayout({ children }) {
     ];
 
     return (
+        <SubmissionFeedbackProvider>
         <div className="min-h-screen bg-slate-50 pb-24 relative font-sans">
             <ResidentPwaHead />
 
@@ -55,7 +56,8 @@ export default function ResidentLayout({ children }) {
                     })}
                 </div>
             </nav>
-            
+
         </div>
+        </SubmissionFeedbackProvider>
     );
 }

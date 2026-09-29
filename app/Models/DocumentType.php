@@ -11,7 +11,19 @@ use Illuminate\Support\Facades\Storage;
 class DocumentType extends Model
 {
     /** @use HasFactory<\Database\Factories\DocumentTypeFactory> */
-    use HasFactory;protected $guarded = [];
+    use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'base_fee',
+        'template_type',
+        'template_path',
+        'field_positions_json',
+        'template_image_width',
+        'template_image_height',
+        'is_active',
+    ];
+
     protected $casts = [
         'field_positions_json' => 'array',
         'is_active' => 'boolean',
@@ -63,11 +75,14 @@ class DocumentType extends Model
         }
     }
 
+    /**
+     * Detaches the template and its field layout. The row is cleared before
+     * the file is deleted, so a failed update never leaves the type pointing
+     * at a missing file.
+     */
     public function clearTemplate(): void
     {
-        if ($this->template_path) {
-            Storage::delete($this->template_path);
-        }
+        $path = $this->template_path;
 
         $this->update([
             'template_type' => null,
@@ -76,5 +91,9 @@ class DocumentType extends Model
             'template_image_width' => null,
             'template_image_height' => null,
         ]);
+
+        if ($path) {
+            Storage::delete($path);
+        }
     }
 }

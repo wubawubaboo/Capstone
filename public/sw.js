@@ -1,4 +1,7 @@
-const CACHE_NAME = 'resident-assets-v1';
+// Caches only the built JS/CSS (content-hashed file names) and the icon, never
+// pages or personal data. Bump the version on each release: the browser then
+// installs this worker again and deletes the previous release's cached files.
+const CACHE_NAME = 'resident-assets-v2';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import ResidentLayout from '@/Layouts/ResidentLayout';
+import { useSubmissionFeedback } from '@/Components/SubmissionFeedback';
 
 export default function Home() {
     const { auth } = usePage().props;
     const [isTriggering, setIsTriggering] = useState(false);
+    const { withFeedback } = useSubmissionFeedback();
 
     const triggerSOS = () => {
         if (confirm("Trigger URGENT SOS? This will immediately alert the Barangay Police.")) {
@@ -17,10 +18,12 @@ export default function Home() {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude,
                         type: 'SOS_CRITICAL' 
-                    }, {
+                    }, withFeedback({
+                        successTitle: 'SOS Sent',
+                        errorTitle: 'SOS Not Sent',
                         preserveScroll: true,
                         onFinish: () => setIsTriggering(false)
-                    });
+                    }));
                 },
                 () => {
                     // Fallback if the user denies location access
@@ -29,10 +32,12 @@ export default function Home() {
                         latitude: 0.000000, 
                         longitude: 0.000000,
                         type: 'SOS_CRITICAL' 
-                    }, {
+                    }, withFeedback({
+                        successTitle: 'SOS Sent',
+                        errorTitle: 'SOS Not Sent',
                         preserveScroll: true,
                         onFinish: () => setIsTriggering(false)
-                    });
+                    }));
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
@@ -121,5 +126,3 @@ export default function Home() {
         </div>
     );
 }
-
-Home.layout = page => <ResidentLayout>{page}</ResidentLayout>;

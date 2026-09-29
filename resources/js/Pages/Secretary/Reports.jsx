@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import { Link, router } from '@inertiajs/react';
 import GenerateReportModal from '@/Components/GenerateReportModal';
 import PaginationLinks from '@/Components/PaginationLinks';
@@ -148,7 +147,7 @@ export default function Reports({ reports, filters }) {
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 min-h-[500px]">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-slate-900">Incident & Emergency Queue</h2>
@@ -278,6 +277,6 @@ export default function Reports({ reports, filters }) {
                 exportUrl={route('secretary.reports.export')}
                 extraParams={statusFilter ? { status: statusFilter } : {}}
             />
-        </SecretaryLayout>
+        </>
     );
 }

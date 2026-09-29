@@ -1,6 +1,5 @@
 import React from 'react';
 import { Head } from '@inertiajs/react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import { HeatmapLayer } from 'react-leaflet-heatmap-layer-v3';
 import { Bar, Line } from 'react-chartjs-2';
@@ -53,7 +52,7 @@ export default function Analytics({ mapLocation, heatmapData, incidentTrends, do
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <Head title="Secretary Analytics" />
             
             <div className="p-6 bg-slate-50 min-h-screen">
@@ -140,6 +139,6 @@ export default function Analytics({ mapLocation, heatmapData, incidentTrends, do
                     </div>
                 </div>
             </div>
-        </SecretaryLayout>
+        </>
     );
 }

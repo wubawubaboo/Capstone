@@ -70,6 +70,9 @@ class DocumentTypeController extends Controller
     {
         $documentType->update(['is_active' => !$documentType->is_active]);
 
+        $state = $documentType->is_active ? 'Activated' : 'Deactivated';
+        SystemLog::logAction(Auth::user()->barangay_id, Auth::id(), 'UPDATE', 'Documents', "{$state} document type '{$documentType->name}'.");
+
         return back()->with('success', 'Document type ' . ($documentType->is_active ? 'activated.' : 'deactivated.'));
     }
 
@@ -80,6 +83,8 @@ class DocumentTypeController extends Controller
         $validated = $request->validated();
 
         $documentType->update(['field_positions_json' => $validated['positions']]);
+
+        SystemLog::logAction(Auth::user()->barangay_id, Auth::id(), 'UPDATE', 'Documents', "Updated the field layout of document type '{$documentType->name}'.");
 
         return back()->with('success', 'Field layout saved.');
     }
@@ -93,7 +98,11 @@ class DocumentTypeController extends Controller
 
     public function destroyTemplate(DocumentType $documentType)
     {
+        abort_unless($documentType->hasTemplate(), 422, 'This document type has no template to remove.');
+
         $documentType->clearTemplate();
+
+        SystemLog::logAction(Auth::user()->barangay_id, Auth::id(), 'UPDATE', 'Documents', "Removed the auto-generation template from document type '{$documentType->name}'.");
 
         return back()->with('success', 'Template removed.');
     }

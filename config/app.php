@@ -60,12 +60,16 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions.
+    |
+    | Every user is in the Philippines (UTC+8, no daylight saving time), so
+    | the app runs in Manila time: stored timestamps, times typed into forms,
+    | "today", exports, certificates and the scheduler all use it. Keep
+    | config/database.php's MySQL `timezone` at the same offset.
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Manila'),
 
     /*
     |--------------------------------------------------------------------------

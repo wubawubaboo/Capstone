@@ -30,12 +30,20 @@ class ImageMergeService
         $width = $documentType->template_image_width ?: 800;
         $height = $documentType->template_image_height ?: 1131;
 
+        // dompdf renders CSS px at 96 DPI (1px = 0.75pt, see config/dompdf.php
+        // 'dpi'), but setPaper()'s array form is in raw PDF points. Passing
+        // the pixel dimensions straight through made the page larger than
+        // the content it renders, leaving the template image stranded in a
+        // corner instead of filling the page.
+        $paperWidth = $width * 72 / 96;
+        $paperHeight = $height * 72 / 96;
+
         $pdf = Pdf::loadView('pdf.document-image-template', [
             'imagePath' => $imagePath,
             'imageWidth' => $width,
             'imageHeight' => $height,
             'boxes' => $boxes,
-        ])->setPaper([0, 0, $width, $height]);
+        ])->setPaper([0, 0, $paperWidth, $paperHeight]);
 
         $tempPdf = tempnam(sys_get_temp_dir(), 'doc_') . '.pdf';
         $pdf->save($tempPdf);

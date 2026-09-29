@@ -75,8 +75,8 @@
                         <span class="value">{{ $blotter->vawcDetail->officer->full_name ?? 'Unassigned' }}</span>
                     </td>
                     <td>
-                        <span class="label">Settlement Record</span>
-                        <span class="value">{{ $blotter->vawcDetail->isSettled() ? 'On File' : 'Not Settled' }}</span>
+                        <span class="label">Settlement</span>
+                        <span class="value">{{ $blotter->vawcDetail->isSettled() ? 'Settled' : 'Not settled' }}</span>
                     </td>
                 </tr>
             </table>

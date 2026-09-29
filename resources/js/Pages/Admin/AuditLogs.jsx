@@ -1,10 +1,9 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
-import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function AuditLogs({ logs }) {
     return (
-        <AdminLayout>
+        <>
             <Head title="System Audit Logs" />
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
@@ -43,6 +42,6 @@ export default function AuditLogs({ logs }) {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }

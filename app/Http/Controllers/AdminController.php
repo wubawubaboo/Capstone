@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use Inertia\Inertia;
 use App\Http\Requests\Admin\StoreStaffAccountRequest;
 use App\Http\Requests\Admin\UpdateStaffAccountRequest;
@@ -11,6 +12,7 @@ use App\Models\Report;
 use App\Models\DocumentRequest;
 use App\Models\Barangay;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
@@ -28,7 +30,11 @@ class AdminController extends Controller
 
     public function accounts()
     {
-        $staffAccounts = User::with('barangay')->whereIn('role', User::MANAGEABLE_STAFF_ROLES)->get();
+        $staffAccounts = User::with('barangay')->whereIn('role', Role::staff())
+            ->orderBy('full_name')
+            ->paginate(self::PER_PAGE)
+            ->withQueryString()
+            ->through(fn (User $account) => $account->setAttribute('role_label', $account->role->label()));
         $barangays = Barangay::orderBy('name')->get();
 
         return Inertia::render('Admin/AccountManagement', [
@@ -41,25 +47,27 @@ class AdminController extends Controller
     {
         $validated = $request->validated();
 
-        $account = User::create([
-            'full_name' => $validated['full_name'],
-            'phone_number' => $validated['phone_number'],
-            'barangay_id' => User::barangayIdForRole($validated['role'], $validated['barangay_id'] ?? null),
-            'role' => $validated['role'],
-            'password' => Hash::make($validated['password']),
-            'is_verified' => true,
-            'address' => $validated['address'] ?? null,
-            'date_of_birth' => $validated['date_of_birth'] ?? null,
-            'start_of_residency' => $validated['start_of_residency'] ?? null,
-        ]);
+        DB::transaction(function () use ($validated, $request) {
+            $account = User::create([
+                'full_name' => $validated['full_name'],
+                'phone_number' => $validated['phone_number'],
+                'barangay_id' => User::barangayIdForRole(Role::from($validated['role']), $validated['barangay_id'] ?? null),
+                'role' => $validated['role'],
+                'password' => Hash::make($validated['password']),
+                'is_verified' => true,
+                'address' => $validated['address'] ?? null,
+                'date_of_birth' => $validated['date_of_birth'] ?? null,
+                'start_of_residency' => $validated['start_of_residency'] ?? null,
+            ]);
 
-        SystemLog::logAction(
-            $account->barangay_id,
-            $request->user()->id,
-            'CREATE',
-            'Account',
-            "Created {$account->role} account for {$account->full_name}."
-        );
+            SystemLog::logAction(
+                $account->barangay_id,
+                $request->user()->id,
+                'CREATE',
+                'Account',
+                "Created {$account->role->label()} account for {$account->full_name}."
+            );
+        });
 
         return redirect()->back()->with('success', 'Administrative account created successfully.');
     }
@@ -73,7 +81,7 @@ class AdminController extends Controller
         $updates = [
             'full_name' => $validated['full_name'],
             'phone_number' => $validated['phone_number'],
-            'barangay_id' => User::barangayIdForRole($validated['role'], $validated['barangay_id'] ?? null),
+            'barangay_id' => User::barangayIdForRole(Role::from($validated['role']), $validated['barangay_id'] ?? null),
             'role' => $validated['role'],
             'address' => $validated['address'],
             'date_of_birth' => $validated['date_of_birth'],
@@ -84,15 +92,17 @@ class AdminController extends Controller
             $updates['password'] = Hash::make($validated['password']);
         }
 
-        $user->update($updates);
+        DB::transaction(function () use ($user, $updates, $request) {
+            $user->update($updates);
 
-        SystemLog::logAction(
-            $user->barangay_id,
-            $request->user()->id,
-            'UPDATE',
-            'Account',
-            "Updated {$user->role} account for {$user->full_name}."
-        );
+            SystemLog::logAction(
+                $user->barangay_id,
+                $request->user()->id,
+                'UPDATE',
+                'Account',
+                "Updated {$user->role->label()} account for {$user->full_name}."
+            );
+        });
 
         return redirect()->back()->with('success', 'Administrative account updated successfully.');
     }
@@ -101,18 +111,17 @@ class AdminController extends Controller
     {
         abort_unless($request->user()->can('delete', $user), 404);
 
-        $name = $user->full_name;
-        $role = $user->role;
-        $barangayId = $user->barangay_id;
-        $user->delete();
+        DB::transaction(function () use ($user, $request) {
+            SystemLog::logAction(
+                $user->barangay_id,
+                $request->user()->id,
+                'DELETE',
+                'Account',
+                "Deleted {$user->role->label()} account for {$user->full_name}."
+            );
 
-        SystemLog::logAction(
-            $barangayId,
-            $request->user()->id,
-            'DELETE',
-            'Account',
-            "Deleted {$role} account for {$name}."
-        );
+            $user->delete();
+        });
 
         return redirect()->back()->with('success', 'Account deleted successfully.');
     }

@@ -6,7 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class ReportStatusHistory extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'report_id',
+        'from_status',
+        'to_status',
+        'changed_by',
+        'note',
+    ];
+
     public const UPDATED_AT = null;
 
     public function report() { return $this->belongsTo(Report::class); }

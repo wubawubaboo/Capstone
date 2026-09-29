@@ -1,7 +1,6 @@
 // resources/js/Pages/Admin/BarangayManagement.jsx
 import React, { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import AdminLayout from '@/Layouts/AdminLayout';
 import BarangayForm from '@/Components/BarangayForm';
 
 export default function BarangayManagement({ barangays }) {
@@ -44,7 +43,7 @@ export default function BarangayManagement({ barangays }) {
     };
 
     return (
-        <AdminLayout>
+        <>
             <Head title="Manage Barangays" />
             
             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-8">
@@ -114,6 +113,6 @@ export default function BarangayManagement({ barangays }) {
                     </table>
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 }

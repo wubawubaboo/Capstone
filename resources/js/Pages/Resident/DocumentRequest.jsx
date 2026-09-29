@@ -1,10 +1,11 @@
 import React from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import ResidentLayout from '@/Layouts/ResidentLayout';
+import { useSubmissionFeedback } from '@/Components/SubmissionFeedback';
 
 export default function DocumentRequest({ documentTypes = [] }) {
     const { auth } = usePage().props;
     const user = auth?.user || {};
+    const { withFeedback } = useSubmissionFeedback();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         document_type_id: '',
@@ -14,9 +15,11 @@ export default function DocumentRequest({ documentTypes = [] }) {
 
     function handleSubmit(e) {
         e.preventDefault();
-        post(route('resident.documents.store'), {
+        post(route('resident.documents.store'), withFeedback({
+            successTitle: 'Request Submitted',
+            trackable: true,
             onSuccess: () => reset(),
-        });
+        }));
     }
 
     return (
@@ -135,6 +138,3 @@ export default function DocumentRequest({ documentTypes = [] }) {
         </div>
     );
 }
-
-// Persistent Layout wrapping
-DocumentRequest.layout = page => <ResidentLayout>{page}</ResidentLayout>;

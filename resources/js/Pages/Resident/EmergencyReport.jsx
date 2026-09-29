@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useForm, Link } from '@inertiajs/react';
-import ResidentLayout from '@/Layouts/ResidentLayout';
+import { useSubmissionFeedback } from '@/Components/SubmissionFeedback';
 
 export default function EmergencyReport() {
+    const { withFeedback } = useSubmissionFeedback();
     const { data, setData, post, processing, errors } = useForm({
         incident_type: '',
         description: '',
+        is_vawc: false,
         latitude: null,
         longitude: null,
         attachment: null,
@@ -43,7 +45,10 @@ export default function EmergencyReport() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('resident.reports.store'));
+        post(route('resident.reports.store'), withFeedback({
+            successTitle: 'Report Filed',
+            trackable: true,
+        }));
     };
 
     return (
@@ -129,6 +134,33 @@ export default function EmergencyReport() {
                                 )}
                             </div>
 
+                            {/* VAWC Confidentiality Flag */}
+                            <label
+                                className={`flex items-start gap-3 p-4 md:p-5 rounded-xl border cursor-pointer transition ${
+                                    data.is_vawc
+                                        ? 'bg-rose-50 border-rose-300'
+                                        : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                                }`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={data.is_vawc}
+                                    onChange={(e) => setData('is_vawc', e.target.checked)}
+                                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                                />
+                                <span>
+                                    <span className="block text-sm font-bold text-slate-800">
+                                        This involves violence against women or children (VAWC)
+                                    </span>
+                                    <span className="block text-xs text-slate-500 mt-1 leading-relaxed">
+                                        Your report will be sent confidentially to the barangay VAWC desk only. Other barangay staff will not see it.
+                                    </span>
+                                </span>
+                            </label>
+                            {errors.is_vawc && (
+                                <p className="text-red-500 text-xs -mt-3 font-medium">{errors.is_vawc}</p>
+                            )}
+
                             {/* Interactive Geolocation Pinning Module */}
                             <div className="bg-slate-50 p-4 md:p-5 rounded-xl border border-slate-200 space-y-3">
                                 <div>
@@ -203,5 +235,3 @@ export default function EmergencyReport() {
         </div>
     );
 }
-
-EmergencyReport.layout = (page) => <ResidentLayout>{page}</ResidentLayout>;

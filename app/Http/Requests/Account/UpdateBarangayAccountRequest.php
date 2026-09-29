@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+namespace App\Http\Requests\Account;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Shared by updatePolice() and updateResident() — both edit the same set of
- * personal-detail fields on a User record.
+ * A secretary editing the personal details of a resident or barangay_police
+ * account in their barangay. Citywide staff accounts are edited through
+ * App\Http\Requests\Admin\UpdateStaffAccountRequest instead.
  */
-class UpdateStaffAccountRequest extends FormRequest
+class UpdateBarangayAccountRequest extends FormRequest
 {
     public function authorize(): bool
     {

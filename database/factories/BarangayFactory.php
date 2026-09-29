@@ -18,7 +18,8 @@ class BarangayFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->unique()->city(),
+            'contact_number' => '09' . fake()->numerify('#########'),
         ];
     }
 }

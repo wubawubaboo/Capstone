@@ -23,6 +23,7 @@ class MediationSchedule extends Model
     protected $casts = [
         'scheduled_date' => 'datetime',
         'status' => MediationStatus::class,
+        'notes' => 'encrypted',
     ];
 
     public function blotter() { return $this->belongsTo(BlotterRecord::class, 'blotter_record_id'); }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Report\TriggerSos;
 use App\Enums\ReportStatus;
 use App\Exports\ReportsExport;
 use App\Http\Controllers\Controller;
@@ -13,58 +14,56 @@ use App\Models\MediationSchedule;
 use App\Models\Report;
 use App\Models\SystemLog;
 use App\Models\User;
-use App\Services\OpenStreetMapService;
+use App\Services\SecureFileStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use App\Events\SosTriggered;
 use Inertia\Inertia;
-use App\Jobs\SendEmergencySmsJob;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller {
     
-    public function store(StoreReportRequest $request)
+    public function store(StoreReportRequest $request, SecureFileStore $secureFiles)
     {
         $validated = $request->validated();
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('reports');
+            $attachmentPath = $secureFiles->store($request->file('attachment'), 'reports');
         }
 
-        Report::create([
-            'user_id' => Auth::id(),
-            'incident_type' => $validated['incident_type'],
-            'description' => $validated['description'],
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
-            'attachment_path' => $attachmentPath,
-            'status' => ReportStatus::Pending,
-        ]);
+        DB::transaction(function () use ($validated, $request, $attachmentPath) {
+            $report = Report::create([
+                'user_id' => Auth::id(),
+                'incident_type' => $validated['incident_type'],
+                'description' => $validated['description'],
+                'is_vawc' => $request->boolean('is_vawc'),
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
+                'attachment_path' => $attachmentPath,
+                'status' => ReportStatus::Pending,
+            ]);
 
-        return to_route('resident.home')->with('success', 'Emergency report submitted successfully.');  
+            // The audit trail is visible to the citywide admin, so a VAWC
+            // report is recorded without its incident type.
+            SystemLog::record('CREATE', 'Report', $report->is_vawc
+                ? "Filed confidential VAWC report #{$report->id}."
+                : "Filed incident report #{$report->id} ({$report->incident_type}).");
+        });
+
+        $message = $request->boolean('is_vawc')
+            ? 'Your report was sent confidentially to the barangay VAWC desk.'
+            : 'Emergency report submitted successfully.';
+
+        return to_route('resident.home')->with('success', $message);
     }
 
-    public function showAttachment(Report $report)
+    public function showAttachment(Report $report, SecureFileStore $secureFiles)
     {
-        $isOwner = Auth::id() === $report->user_id;
-        $isStaffForBarangay = in_array(Auth::user()->role, ['secretary', 'vawc'])
-            && $report->user
-            && $report->user->barangay_id === Auth::user()->barangay_id;
+        abort_unless(Auth::user()->can('view', $report), 403, 'Unauthorized to view this evidence.');
+        abort_unless($secureFiles->exists($report->attachment_path), 404, 'File not found.');
 
-        if (!$isOwner && !$isStaffForBarangay) {
-            abort(403, 'Unauthorized to view this evidence.');
-        }
-
-        $filePath = Storage::disk('local')->path($report->attachment_path);
-
-        if (!file_exists($filePath)) {
-            abort(404, 'File not found.');
-        }
-
-        return response()->file($filePath);
+        return $secureFiles->response($report->attachment_path);
     }
 
     public function profile()
@@ -113,9 +112,13 @@ class ReportController extends Controller {
                 ];
             });
 
-        $reports = Report::where('user_id', $user->id)->latest()->get();
-        $serviceRequests = \App\Models\ServiceRequest::where('requester_id', $user->id)->latest()->get();
-        $documentRequests = \App\Models\DocumentRequest::with('documentType')->where('requester_id', $user->id)->latest()->get();
+        // Each tab pages independently, so moving through one keeps the others' pages.
+        $reports = Report::where('user_id', $user->id)->latest()
+            ->paginate(self::PER_PAGE, ['*'], 'reports_page')->withQueryString();
+        $serviceRequests = \App\Models\ServiceRequest::where('requester_id', $user->id)->latest()
+            ->paginate(self::PER_PAGE, ['*'], 'services_page')->withQueryString();
+        $documentRequests = \App\Models\DocumentRequest::with('documentType')->where('requester_id', $user->id)->latest()
+            ->paginate(self::PER_PAGE, ['*'], 'documents_page')->withQueryString();
 
         return Inertia::render('Resident/Tracking', [
             'caseUpdates' => $caseUpdates,
@@ -125,65 +128,50 @@ class ReportController extends Controller {
         ]);
     }
 
-    public function storeEmergency(StoreEmergencyRequest $request, OpenStreetMapService $geocodeService)
+    public function storeEmergency(StoreEmergencyRequest $request, TriggerSos $triggerSos)
     {
         $validated = $request->validated();
 
-        $user = Auth::user();
-        $barangay = $user->barangay->name ?? 'San Nicolas';
-        $locationData = $geocodeService->reverseGeocode($validated['latitude'], $validated['longitude']);
-        $address = $locationData ? $locationData['full_address'] : 'Unknown Location (Check GPS Map)';
-        
-        $withinBoundary = $user->barangay?->containsPoint(
-            (float) $validated['latitude'],
-            (float) $validated['longitude']
-        );
-
-        if ($withinBoundary !== null) {
-            // Barangay has a real boundary polygon on file: trust it.
-            $isOutsideJurisdiction = !$withinBoundary;
-        } else {
-            // No polygon fetched yet for this barangay: fall back to the
-            // coarser reverse-geocoded address match.
-            $isOutsideJurisdiction = $locationData
-                && isset($locationData['village'])
-                && stripos($locationData['village'], $barangay) === false;
-        }
-
-        $report = Report::create([
-            'user_id' => Auth::id(),
-            'incident_type' => 'SOS_CRITICAL', 
-            'description' => 'SOS EMERGENCY: ' . $validated['emergency_type'] . ' at ' . $address, 
-            'latitude' => $validated['latitude'], 
-            'longitude' => $validated['longitude'],
-            'status' => ReportStatus::Pending,
-        ]);
-
-        SystemLog::record('CREATE', 'Report', "Triggered SOS emergency ({$validated['emergency_type']}) at {$address}.");
-
-        broadcast(new SosTriggered($report));
-
-        $message = "URGENT SOS - {$barangay}: {$validated['emergency_type']} reported at {$address}.";
-        if ($isOutsideJurisdiction) {
-            $message .= " (WARNING: Potentially outside barangay boundaries).";
-        }
-        
-        $policeOfficers = User::where('role', 'barangay_police')
-            ->where('barangay_id', $user->barangay_id)
-            ->whereNotNull('phone_number')
-            ->get();
-
-        SendEmergencySmsJob::dispatch($policeOfficers, $message);
+        $triggerSos($request->user(), $validated['emergency_type'], (float) $validated['latitude'], (float) $validated['longitude']);
 
         return back()->with('success', 'Emergency SOS triggered successfully.');
     }
 
+    /**
+     * Report picker on the Create Blotter pages: up to 10 of the signed-in
+     * desk's open reports without a case, matched by report number, incident
+     * type or reporter name. Descriptions are encrypted, so aren't searched.
+     */
+    public function searchPending(Request $request)
+    {
+        $term = trim(ltrim(trim((string) $request->query('q', '')), '#'));
+
+        if ($term === '') {
+            return response()->json([]);
+        }
+
+        $reports = Report::visibleTo(Auth::user())
+            ->awaitingBlotter()
+            ->where(function ($q) use ($term) {
+                $q->where('incident_type', 'like', "%{$term}%")
+                    ->orWhereHas('user', fn ($u) => $u->where('full_name', 'like', "%{$term}%"));
+
+                if (ctype_digit($term)) {
+                    $q->orWhere('id', (int) $term);
+                }
+            })
+            ->with('user:id,full_name')
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return response()->json($reports);
+    }
+
     public function secretaryIndex(Request $request)
     {
-        $barangayId = Auth::user()->barangay_id;
-
         $query = Report::with('user')
-            ->forBarangay($barangayId);
+            ->visibleTo(Auth::user());
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
@@ -204,10 +192,8 @@ class ReportController extends Controller {
     {
         $validated = $request->validated();
 
-        $barangayId = Auth::user()->barangay_id;
-
         $query = Report::with('user')
-            ->forBarangay($barangayId);
+            ->visibleTo(Auth::user());
 
         $query->when($validated['status'] ?? null, function ($q, $status) {
             return $q->where('status', $status);
@@ -231,17 +217,15 @@ class ReportController extends Controller {
 
     public function vawcIndex(Request $request)
     {
-        $barangayId = Auth::user()->barangay_id;
-
         $query = Report::with('user')
-            ->forBarangay($barangayId);
+            ->visibleTo(Auth::user());
 
         $query->when($request->input('status'), function ($q, $status) {
             return $q->where('status', $status);
         });
 
-        $reports = $query->orderByRaw("CASE WHEN incident_type = 'SOS_CRITICAL' AND status != 'completed' THEN 1 ELSE 2 END")
-            ->orderBy('created_at', 'desc')
+        // SOS alerts never reach the VAWC desk, so no SOS-first ordering here.
+        $reports = $query->orderBy('created_at', 'desc')
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
@@ -253,7 +237,7 @@ class ReportController extends Controller {
 
     public function updateStatus(UpdateReportStatusRequest $request, Report $report)
     {
-        abort_unless($report->user && $report->user->barangay_id === Auth::user()->barangay_id, 404);
+        abort_unless(Auth::user()->can('update', $report), 404);
 
         $validated = $request->validated();
 
@@ -289,19 +273,19 @@ class ReportController extends Controller {
             }
         });
 
-        SystemLog::record('UPDATE', 'Report', "Updated Report #{$report->id} status to {$validated['status']}.", $report->user->barangay_id);
+        SystemLog::record('UPDATE', 'Report', "Updated Report #{$report->id} status to {$validated['status']}.", $report->barangay_id);
 
         return back()->with('success', 'Report status updated successfully.');
     }
 
     public function acknowledge(Report $report)
     {
-        abort_unless($report->user && $report->user->barangay_id === Auth::user()->barangay_id, 404);
+        abort_unless(Auth::user()->can('update', $report), 404);
 
         if (!$report->acknowledged_at) {
             $report->update(['acknowledged_at' => now()]);
 
-            SystemLog::record('UPDATE', 'Report', "Acknowledged SOS Report #{$report->id}.", $report->user->barangay_id);
+            SystemLog::record('UPDATE', 'Report', "Acknowledged SOS Report #{$report->id}.", $report->barangay_id);
         }
 
         return back()->with('success', 'Report acknowledged.');

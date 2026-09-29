@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import VAWCLayout from '@/Layouts/VAWCLayout';
 import ResidentAutocomplete from '@/Components/ResidentAutocomplete';
+import PendingReportPicker from '@/Components/PendingReportPicker';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function CreateBlotter({ pendingReports = [], selectedReportId = '' }) {
-    const [entryType, setEntryType] = useState(selectedReportId ? 'existing' : 'walk-in');
+export default function CreateBlotter({ selectedReport = null }) {
+    const [entryType, setEntryType] = useState(selectedReport ? 'existing' : 'walk-in');
+    const [activeReport, setActiveReport] = useState(selectedReport);
     const [complainant, setComplainant] = useState(null);
     const [respondent, setRespondent] = useState(null);
 
     const { data, setData, post, processing, errors } = useForm({
-        report_id: selectedReportId || '',
+        report_id: selectedReport?.id ?? '',
         is_registered_complainant: true,
         complainant_id: '',
         complainant_name: '',
@@ -21,15 +22,13 @@ export default function CreateBlotter({ pendingReports = [], selectedReportId = 
         confidential_notes: '',
     });
 
-    const activeReport = pendingReports?.find((r) => r.id === parseInt(data.report_id));
-
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('vawc.blotters.store'));
     };
 
     return (
-        <VAWCLayout>
+        <>
             <Head title="File VAWC Incident" />
 
             <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-rose-100 p-8">
@@ -49,7 +48,7 @@ export default function CreateBlotter({ pendingReports = [], selectedReportId = 
                             </p>
                         </div>
                     </div>
-                    {selectedReportId && (
+                    {selectedReport && (
                         <Link href={route('vawc.reports')} className="text-sm font-bold text-slate-500 hover:text-slate-800">
                             Back to Incident Queue
                         </Link>
@@ -78,6 +77,7 @@ export default function CreateBlotter({ pendingReports = [], selectedReportId = 
                         type="button"
                         onClick={() => {
                             setEntryType('walk-in');
+                            setActiveReport(null);
                             setData('report_id', '');
                         }}
                         className={`px-4 py-2 rounded text-sm font-bold transition-colors ${entryType === 'walk-in' ? 'bg-[#3B122D] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
@@ -95,19 +95,19 @@ export default function CreateBlotter({ pendingReports = [], selectedReportId = 
 
                         {entryType === 'existing' ? (
                             <div className="space-y-3">
-                                <select
-                                    value={data.report_id}
-                                    onChange={(e) => setData('report_id', e.target.value)}
-                                    className="w-full border-slate-300 rounded-md shadow-xs p-2.5 border text-sm focus:ring-rose-800 focus:border-rose-800"
-                                >
-                                    <option value="">-- Select an Incident Report --</option>
-                                    {pendingReports?.map((report) => (
-                                        <option key={report.id} value={report.id}>
-                                            Report #{report.id} - {report.incident_type} ({report.user?.full_name})
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.report_id && <p className="text-red-600 text-xs mt-1 font-medium">{errors.report_id}</p>}
+                                <PendingReportPicker
+                                    searchUrl={route('vawc.reports.pending-search')}
+                                    selected={activeReport}
+                                    onSelect={(report) => {
+                                        setActiveReport(report);
+                                        setData('report_id', report.id);
+                                    }}
+                                    onClear={() => {
+                                        setActiveReport(null);
+                                        setData('report_id', '');
+                                    }}
+                                    error={errors.report_id}
+                                />
 
                                 {activeReport && (
                                     <div className="p-4 bg-white border border-rose-100 rounded text-sm text-slate-700 space-y-1">
@@ -310,6 +310,6 @@ export default function CreateBlotter({ pendingReports = [], selectedReportId = 
                     </div>
                 </form>
             </div>
-        </VAWCLayout>
+        </>
     );
 }

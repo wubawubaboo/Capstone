@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import GenerateReportModal from '@/Components/GenerateReportModal';
 import PaginationLinks from '@/Components/PaginationLinks';
 
@@ -18,7 +17,7 @@ export default function BlotterManagement({ blotters }) {
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div>
@@ -106,6 +105,6 @@ export default function BlotterManagement({ blotters }) {
                 onClose={() => setShowReportModal(false)}
                 exportUrl={route('secretary.blotters.export')}
             />
-        </SecretaryLayout>
+        </>
     );
 }

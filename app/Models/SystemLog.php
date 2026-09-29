@@ -11,7 +11,15 @@ class SystemLog extends Model
     /** @use HasFactory<\Database\Factories\SystemLogFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'barangay_id',
+        'actor_id',
+        'action_type',
+        'module',
+        'description',
+        'ip_address',
+    ];
+
     public const UPDATED_AT = null;
 
     public function barangay() { return $this->belongsTo(Barangay::class); }

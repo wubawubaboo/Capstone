@@ -1,6 +1,5 @@
 import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
-import ResidentLayout from '@/Layouts/ResidentLayout';
 
 export default function Profile({ profileUser }) {
     const { auth } = usePage().props;
@@ -98,5 +97,3 @@ export default function Profile({ profileUser }) {
         </div>
     );
 }
-
-Profile.layout = page => <ResidentLayout>{page}</ResidentLayout>;

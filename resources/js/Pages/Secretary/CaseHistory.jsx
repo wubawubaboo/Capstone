@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react'; // Added router
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 
 export default function CaseHistory({ blotter }) {
     const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -79,7 +78,7 @@ export default function CaseHistory({ blotter }) {
     const isCaseClosed = blotter.status === 'Resolved' || blotter.status === 'Escalated to Court';
 
     return (
-        <SecretaryLayout>
+        <>
             <Head title={`Case Details - ${blotter.case_number}`} />
 
             <div className="space-y-6 max-w-5xl mx-auto">
@@ -372,6 +371,6 @@ export default function CaseHistory({ blotter }) {
                     </div>
                 </div>
             )}
-        </SecretaryLayout>
+        </>
     );
 }

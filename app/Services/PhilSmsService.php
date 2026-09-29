@@ -2,82 +2,93 @@
 
 namespace App\Services;
 
+use App\Exceptions\SmsDeliveryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Sends a single SMS through PhilSMS. Don't call this directly from request
+ * code: dispatch App\Jobs\SendSmsJob instead, which runs it on the queue and
+ * retries temporary failures.
+ */
 class PhilSmsService
 {
+    protected $enabled;
     protected $token;
     protected $senderId;
     protected $baseUrl = 'https://app.philsms.com/api/v3/sms/send';
 
-    private const MAX_ATTEMPTS = 3;
-    private const RETRY_DELAY_US = 300_000;
-
     public function __construct()
     {
+        $this->enabled = (bool) config('services.philsms.enabled');
         $this->token = config('services.philsms.token');
         $this->senderId = config('services.philsms.sender_id');
     }
 
-
-    public function sendSms($recipient, $message): bool
+    /**
+     * Returns true when the message was accepted (or SMS is disabled and it
+     * was only logged), false when it can never be delivered as-is (no token,
+     * invalid number, rejected by the provider). Throws SmsDeliveryException
+     * for temporary failures that are worth retrying.
+     */
+    public function sendSms(string $recipient, string $message): bool
     {
+        if (!$this->enabled) {
+            Log::info('PhilSMS disabled (SMS_ENABLED=false); message not sent.', [
+                'recipient' => $recipient,
+                'message' => $message,
+            ]);
+
+            return true;
+        }
+
         if (empty($this->token)) {
             Log::error('PhilSMS: no API token configured; message not sent.', ['recipient' => $recipient]);
+
             return false;
         }
 
         $recipient = $this->normalizeRecipient($recipient);
 
-        for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
-            try {
-                $response = Http::withToken($this->token)->post($this->baseUrl, [
-                    'recipient' => $recipient,
-                    'sender_id' => $this->senderId,
-                    'type' => 'plain',
-                    'message' => $message,
-                ]);
+        if (!preg_match('/^63\d{10}$/', $recipient)) {
+            Log::error('PhilSMS: invalid recipient number; message not sent.', ['recipient' => $recipient]);
 
-                if ($response->successful()) {
-                    return true;
-                }
-
-                if ($response->clientError()) {
-                    Log::error('PhilSMS: request rejected, not retrying.', [
-                        'recipient' => $recipient,
-                        'status' => $response->status(),
-                        'body' => $response->body(),
-                    ]);
-
-                    return false;
-                }
-
-                Log::warning("PhilSMS: server error on attempt {$attempt}/" . self::MAX_ATTEMPTS . '.', [
-                    'recipient' => $recipient,
-                    'status' => $response->status(),
-                ]);
-            } catch (ConnectionException $e) {
-                Log::warning("PhilSMS: connection error on attempt {$attempt}/" . self::MAX_ATTEMPTS . ": {$e->getMessage()}", [
-                    'recipient' => $recipient,
-                ]);
-            }
-
-            if ($attempt < self::MAX_ATTEMPTS) {
-                usleep(self::RETRY_DELAY_US * $attempt);
-            }
+            return false;
         }
 
-        Log::error('PhilSMS: failed to deliver message after ' . self::MAX_ATTEMPTS . ' attempts.', [
-            'recipient' => $recipient,
-        ]);
+        try {
+            $response = Http::withToken($this->token)->timeout(15)->post($this->baseUrl, [
+                'recipient' => $recipient,
+                'sender_id' => $this->senderId,
+                'type' => 'plain',
+                'message' => $message,
+            ]);
+        } catch (ConnectionException $e) {
+            throw new SmsDeliveryException("PhilSMS: connection error: {$e->getMessage()}", previous: $e);
+        }
 
-        return false;
+        if ($response->successful()) {
+            return true;
+        }
+
+        if ($response->clientError()) {
+            Log::error('PhilSMS: request rejected, not retrying.', [
+                'recipient' => $recipient,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return false;
+        }
+
+        throw new SmsDeliveryException("PhilSMS: server error (HTTP {$response->status()}).");
     }
 
     private function normalizeRecipient(string $recipient): string
     {
+        $recipient = preg_replace('/\D/', '', $recipient);
+
         if (str_starts_with($recipient, '09')) {
             return '63' . substr($recipient, 1);
         }

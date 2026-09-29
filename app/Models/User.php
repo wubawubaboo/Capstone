@@ -3,18 +3,17 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
-
-    /** Roles manageable from the admin Account Management page. */
-    public const MANAGEABLE_STAFF_ROLES = ['secretary', 'vawc', 'admin'];
 
     /**
      * The attributes that are mass assignable.
@@ -53,9 +52,11 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'date_of_birth' => 'date',         // Added cast
+            'role' => Role::class,
+            // Sent to pages as a plain "YYYY-MM-DD" date, not a midnight timestamp
+            // that the viewer's timezone could shift to the previous day.
+            'date_of_birth' => 'date:Y-m-d',
             'start_of_residency' => 'integer', // Added cast
         ];
     }
@@ -68,7 +69,6 @@ class User extends Authenticatable
     public function receivedBlotters() { return $this->hasMany(BlotterRecord::class, 'receiver_id'); }
     public function handledVawcCases() { return $this->hasMany(VawcDetail::class, 'officer_in_charge_id'); }
     public function systemLogs() { return $this->hasMany(SystemLog::class, 'actor_id'); }
-    public function attachments() { return $this->hasMany(Attachment::class, 'uploaded_by'); }
 
     // Computed
     public function getAge(): ?int
@@ -82,21 +82,39 @@ class User extends Authenticatable
     }
 
     // Role Checks
-    public function isRole($role) { return $this->role === $role; }
-    public function isSecretary() { return $this->role === 'secretary'; }
-    public function isResident() { return $this->role === 'resident'; }
-    public function isPendingVerification(): bool { return $this->role === 'resident' && !$this->is_verified; }
+    public function isResident(): bool { return $this->role === Role::Resident; }
+    public function isPendingVerification(): bool { return $this->isResident() && !$this->is_verified; }
+    public function usesStaffPortal(): bool { return $this->role?->isStaff() ?? false; }
+
+    /** See Role::homeRoute(), the single source of truth for landing pages. */
+    public function homeRoute(): ?string
+    {
+        return $this->role?->homeRoute();
+    }
+
+    /**
+     * Removes the resident's ID and selfie uploads. Call this only after the
+     * account row has been deleted: file deletion isn't transactional, so a
+     * failure should leave orphaned files rather than a user with no evidence.
+     */
+    public function deleteVerificationDocuments(): void
+    {
+        foreach ([$this->id_photo_path, $this->selfie_id_path] as $path) {
+            if ($path) {
+                Storage::delete($path);
+            }
+        }
+    }
 
     // Query Scopes
     public function scopeByBarangay($query, $barangayId) { return $query->where('barangay_id', $barangayId); }
-    public function scopeSecretaries($query) { return $query->where('role', 'secretary'); }
 
     /**
-     * Admin accounts are citywide (no barangay); every other manageable
-     * staff role belongs to the barangay it was assigned.
+     * Admin accounts are citywide (no barangay); every other staff role
+     * belongs to the barangay it was assigned.
      */
-    public static function barangayIdForRole(string $role, ?int $requestedBarangayId): ?int
+    public static function barangayIdForRole(Role $role, ?int $requestedBarangayId): ?int
     {
-        return $role === 'admin' ? null : $requestedBarangayId;
+        return $role->isCitywide() ? null : $requestedBarangayId;
     }
 }

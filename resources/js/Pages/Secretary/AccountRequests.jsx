@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import { Link, useForm, router } from '@inertiajs/react';
 import PaginationLinks from '@/Components/PaginationLinks';
 
@@ -53,7 +52,7 @@ const EditAccountModal = ({ user, type, onClose }) => {
         full_name: user.full_name,
         phone_number: user.phone_number,
         address: user.address || '',
-        date_of_birth: user.date_of_birth || '',
+        date_of_birth: user.date_of_birth ? user.date_of_birth.substring(0, 10) : '',
         start_of_residency: user.start_of_residency || '',
     });
 
@@ -160,7 +159,7 @@ export default function AccountRequests({
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 mb-6">
                 
                 {/* 3-Tab Navigation */}
@@ -380,6 +379,6 @@ export default function AccountRequests({
 
             {userToReject && <RejectAccountModal user={userToReject} onClose={() => setUserToReject(null)} />}
             {userToEdit && <EditAccountModal user={userToEdit} type={editType} onClose={() => setUserToEdit(null)} />}
-        </SecretaryLayout>
+        </>
     );
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
-import ResidentLayout from '@/Layouts/ResidentLayout';
+import PaginationLinks from '@/Components/PaginationLinks';
 
 const StatusBadge = ({ status }) => {
     const s = (status || 'pending').toLowerCase();
@@ -21,7 +21,13 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-export default function Tracking({ caseUpdates = [], reports = [], serviceRequests = [], documentRequests = [] }) {
+const VawcBadge = () => (
+    <span className="ml-2 px-2 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-wider align-middle">
+        VAWC · Confidential
+    </span>
+);
+
+export default function Tracking({ caseUpdates = [], reports, serviceRequests, documentRequests }) {
     const [activeTab, setActiveTab] = useState('reports');
 
     return (
@@ -42,19 +48,19 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                             onClick={() => setActiveTab('reports')} 
                             className={`px-4 md:px-6 py-4 text-xs md:text-sm font-bold uppercase whitespace-nowrap snap-start transition-colors focus:outline-none ${activeTab === 'reports' ? 'border-b-2 border-[#0a2342] text-[#0a2342] bg-slate-50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
                         >
-                            Incident Reports ({reports.length})
+                            Incident Reports ({reports.total})
                         </button>
                         <button 
                             onClick={() => setActiveTab('services')} 
                             className={`px-4 md:px-6 py-4 text-xs md:text-sm font-bold uppercase whitespace-nowrap snap-start transition-colors focus:outline-none ${activeTab === 'services' ? 'border-b-2 border-[#0a2342] text-[#0a2342] bg-slate-50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
                         >
-                            Service Requests ({serviceRequests.length})
+                            Service Requests ({serviceRequests.total})
                         </button>
                         <button 
                             onClick={() => setActiveTab('documents')} 
                             className={`px-4 md:px-6 py-4 text-xs md:text-sm font-bold uppercase whitespace-nowrap snap-start transition-colors focus:outline-none ${activeTab === 'documents' ? 'border-b-2 border-[#0a2342] text-[#0a2342] bg-slate-50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
                         >
-                            Document Requests ({documentRequests.length})
+                            Document Requests ({documentRequests.total})
                         </button>
                         <button 
                             onClick={() => setActiveTab('mediation')} 
@@ -72,10 +78,10 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                             <div>
                                 {/* Mobile View: Stacked Cards */}
                                 <div className="block md:hidden space-y-4">
-                                    {reports.length > 0 ? reports.map(req => (
+                                    {reports.data.length > 0 ? reports.data.map(req => (
                                         <div key={req.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                                             <div className="flex justify-between items-start mb-2">
-                                                <span className="font-bold text-slate-800 text-sm">{req.incident_type || req.type}</span>
+                                                <span className="font-bold text-slate-800 text-sm">{req.incident_type || req.type}{req.is_vawc && <VawcBadge />}</span>
                                                 <StatusBadge status={req.status} />
                                             </div>
                                             <p className="text-xs text-slate-500 mb-2">{new Date(req.created_at).toLocaleDateString()}</p>
@@ -96,10 +102,10 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {reports.length > 0 ? reports.map(req => (
+                                            {reports.data.length > 0 ? reports.data.map(req => (
                                                 <tr key={req.id} className="hover:bg-slate-50">
                                                     <td className="py-4 px-2 text-slate-600">{new Date(req.created_at).toLocaleDateString()}</td>
-                                                    <td className="py-4 px-2 font-bold text-slate-800">{req.incident_type || req.type}</td>
+                                                    <td className="py-4 px-2 font-bold text-slate-800">{req.incident_type || req.type}{req.is_vawc && <VawcBadge />}</td>
                                                     <td className="py-4 px-2 text-slate-500 truncate max-w-[300px]">{req.description || req.location_details || 'N/A'}</td>
                                                     <td className="py-4 px-2 text-right"><StatusBadge status={req.status} /></td>
                                                 </tr>
@@ -107,6 +113,7 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                                         </tbody>
                                     </table>
                                 </div>
+                                <PaginationLinks paginator={reports} />
                             </div>
                         )}
 
@@ -115,7 +122,7 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                             <div>
                                 {/* Mobile View */}
                                 <div className="block md:hidden space-y-4">
-                                    {serviceRequests.length > 0 ? serviceRequests.map(req => (
+                                    {serviceRequests.data.length > 0 ? serviceRequests.data.map(req => (
                                         <div key={req.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className="font-bold text-slate-800 text-sm">{req.service_type || req.type || 'Barangay Service'}</span>
@@ -139,7 +146,7 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {serviceRequests.length > 0 ? serviceRequests.map(req => (
+                                            {serviceRequests.data.length > 0 ? serviceRequests.data.map(req => (
                                                 <tr key={req.id} className="hover:bg-slate-50">
                                                     <td className="py-4 px-2 text-slate-600">{new Date(req.created_at).toLocaleDateString()}</td>
                                                     <td className="py-4 px-2 font-bold text-slate-800">{req.service_type || req.type || 'Barangay Service'}</td>
@@ -150,6 +157,7 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                                         </tbody>
                                     </table>
                                 </div>
+                                <PaginationLinks paginator={serviceRequests} />
                             </div>
                         )}
 
@@ -158,7 +166,7 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                             <div>
                                 {/* Mobile View */}
                                 <div className="block md:hidden space-y-4">
-                                    {documentRequests.length > 0 ? documentRequests.map(req => (
+                                    {documentRequests.data.length > 0 ? documentRequests.data.map(req => (
                                         <div key={req.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className="font-bold text-slate-800 text-sm">{req.document_type?.name || req.document_type || 'Barangay Certificate'}</span>
@@ -182,7 +190,7 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                            {documentRequests.length > 0 ? documentRequests.map(req => (
+                                            {documentRequests.data.length > 0 ? documentRequests.data.map(req => (
                                                 <tr key={req.id} className="hover:bg-slate-50">
                                                     <td className="py-4 px-2 text-slate-600">{new Date(req.created_at).toLocaleDateString()}</td>
                                                     <td className="py-4 px-2 font-bold text-slate-800">{req.document_type?.name || req.document_type || 'Barangay Certificate'}</td>
@@ -193,6 +201,7 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
                                         </tbody>
                                     </table>
                                 </div>
+                                <PaginationLinks paginator={documentRequests} />
                             </div>
                         )}
 
@@ -250,5 +259,3 @@ export default function Tracking({ caseUpdates = [], reports = [], serviceReques
         </div>
     );
 }
-
-Tracking.layout = page => <ResidentLayout>{page}</ResidentLayout>;

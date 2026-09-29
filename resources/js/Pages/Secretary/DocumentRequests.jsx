@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import SecretaryLayout from '@/Layouts/SecretaryLayout';
 import { router } from '@inertiajs/react';
 import GenerateReportModal from '@/Components/GenerateReportModal';
 import PaginationLinks from '@/Components/PaginationLinks';
@@ -32,7 +31,7 @@ export default function DocumentRequests({ requests, filters, documentTypes, fie
     };
 
     return (
-        <SecretaryLayout>
+        <>
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 min-h-[500px]">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-slate-900">Document Requests</h2>
@@ -110,7 +109,7 @@ export default function DocumentRequests({ requests, filters, documentTypes, fie
                                         </td>
                                         <td className="py-4 px-2 text-center">
                                             <div className="flex justify-center gap-2">
-                                                {item.document_type?.template_type && (
+                                                {item.document_type?.template_type && item.status !== 'Claimed' && (
                                                     <a
                                                         href={route('secretary.document-requests.generate', item.id)}
                                                         className="bg-slate-800 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-slate-900 inline-block"
@@ -118,18 +117,22 @@ export default function DocumentRequests({ requests, filters, documentTypes, fie
                                                         GENERATE
                                                     </a>
                                                 )}
-                                                <button
-                                                    onClick={() => handleStatusUpdate(item.id, 'Ready')}
-                                                    className="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700"
-                                                >
-                                                    READY
-                                                </button>
-                                                <button
-                                                    onClick={() => handleStatusUpdate(item.id, 'Claimed')}
-                                                    className="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-blue-700"
-                                                >
-                                                    CLAIMED
-                                                </button>
+                                                {item.status === 'Pending' && (
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(item.id, 'Ready')}
+                                                        className="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700"
+                                                    >
+                                                        READY
+                                                    </button>
+                                                )}
+                                                {item.status === 'Ready' && (
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(item.id, 'Claimed')}
+                                                        className="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-blue-700"
+                                                    >
+                                                        CLAIMED
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -155,6 +158,6 @@ export default function DocumentRequests({ requests, filters, documentTypes, fie
                 exportUrl={route('secretary.document-requests.export')}
                 extraParams={statusFilter ? { status: statusFilter } : {}}
             />
-        </SecretaryLayout>
+        </>
     );
 }
